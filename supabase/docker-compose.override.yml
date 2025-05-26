@@ -1,0 +1,12 @@
+version: '3.8'
+
+services:
+  edge-runtime:
+    volumes:
+      # supabaseディレクトリ内のnscacert.pemをコンテナにマウントします。
+      # このdocker-compose.override.ymlファイルとnscacert.pemが同じ
+      # /Users/s.maemura/nemuru/supabase/ ディレクトリにあることを前提としています。
+      - ./nscacert.pem:/etc/ssl/certs/nscacert.pem:ro
+    environment:
+      # DenoランタイムにカスタムCA証明書の場所を伝えます。
+      - DENO_CERT=/etc/ssl/certs/nscacert.pem
