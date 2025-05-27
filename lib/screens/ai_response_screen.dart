@@ -3,12 +3,207 @@ import 'package:nemuru/theme/app_theme.dart';
 import 'package:nemuru/services/gpt_service.dart';
 import 'package:provider/provider.dart';
 import 'package:nemuru/services/preferences_service.dart';
-import 'package:nemuru/models/message.dart';
-import 'package:nemuru/services/chat_log_service.dart';
 import 'package:nemuru/services/subscription_service.dart';
+import 'package:nemuru/services/chat_log_service.dart';
 import 'package:nemuru/widgets/character_image_painter.dart';
+import 'package:nemuru/models/message.dart';
+import 'package:nemuru/models/chat_log.dart';
+import 'package:nemuru/models/character.dart';
+import 'dart:math';
+import 'dart:async';
 import 'package:nemuru/models/chat_log.dart'; // ChatLogモデルをインポート
 import 'package:nemuru/models/character.dart';
+
+// 星のデータを保持するクラス
+class Star {
+  final double x; // 画面上のx座標（0.0〜1.0）
+  final double y; // 画面上のy座標（0.0〜1.0）
+  final double size; // 星のサイズ
+  final double opacity; // 星の透明度
+
+  Star({required this.x, required this.y, required this.size, required this.opacity});
+}
+
+// 星空の背景を描画するためのカスタムペインター
+class StarSkyPainter extends CustomPainter {
+  final bool isDarkMode;
+  // 静的なリストで星を保持することで、再描画時に星の位置が変わらないようにする
+  static final List<Star> _darkModeStars = [];
+  static final List<Star> _lightModeStars = [];
+  static final Random _random = Random();
+  
+  StarSkyPainter({required this.isDarkMode}) {
+    // 初回のみ星を生成
+    if (isDarkMode && _darkModeStars.isEmpty) {
+      _generateStars(_darkModeStars, 100); // ダークモードでは100個の星
+    } else if (!isDarkMode && _lightModeStars.isEmpty) {
+      _generateStars(_lightModeStars, 30); // ライトモードでは30個の星
+    }
+  }
+  
+  // 星を生成するヘルパーメソッド
+  void _generateStars(List<Star> starList, int count) {
+    for (int i = 0; i < count; i++) {
+      starList.add(Star(
+        x: _random.nextDouble(),
+        y: _random.nextDouble(),
+        size: _random.nextDouble() * 2 + 0.5, // 0.5〜2.5のサイズ
+        opacity: _random.nextDouble() * 0.7 + 0.3, // 0.3〜1.0の透明度
+      ));
+    }
+  }
+  
+  @override
+  void paint(Canvas canvas, Size size) {
+    // 使用する星のリストを選択
+    final stars = isDarkMode ? _darkModeStars : _lightModeStars;
+    
+    // 星を描画
+    for (final star in stars) {
+      final paint = Paint()
+        ..color = isDarkMode 
+            ? Colors.white.withOpacity(star.opacity) 
+            : Colors.blueGrey.withOpacity(star.opacity * 0.7)
+        ..style = PaintingStyle.fill;
+      
+      // 星の位置を計算
+      final x = star.x * size.width;
+      final y = star.y * size.height;
+      
+      // 星を描画（小さな円）
+      canvas.drawCircle(Offset(x, y), star.size, paint);
+      
+      // 輝きを追加（より大きな透明な円）
+      if (isDarkMode && star.size > 1.5) {
+        final glowPaint = Paint()
+          ..color = Colors.white.withOpacity(star.opacity * 0.3)
+          ..style = PaintingStyle.fill;
+        canvas.drawCircle(Offset(x, y), star.size * 2, glowPaint);
+      }
+    }
+  }
+  
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+}
+
+// 流れ星を描画するカスタムペインター
+class ShootingStarPainter extends CustomPainter {
+  final bool isDarkMode;
+  final double animationValue; // 0.0から1.0のアニメーション値
+  
+  // 流れ星の情報を保持するクラス
+  class ShootingStar {
+    final double startX;
+    final double startY;
+    final double length;
+    final double angle; // ラジアン単位
+    final double speed;
+    final double delay; // 0.0から1.0の遅延値
+    
+    ShootingStar({
+      required this.startX,
+      required this.startY,
+      required this.length,
+      required this.angle,
+      required this.speed,
+      required this.delay,
+    });
+  }
+  
+  // 静的な流れ星のリスト
+  static final List<ShootingStar> _shootingStars = [];
+  static final Random _random = Random();
+  
+  ShootingStarPainter({required this.isDarkMode, required this.animationValue}) {
+    // 初回のみ流れ星を生成
+    if (_shootingStars.isEmpty) {
+      _generateShootingStars();
+    }
+  }
+  
+  void _generateShootingStars() {
+    // 5個の流れ星を生成
+    for (int i = 0; i < 5; i++) {
+      _shootingStars.add(ShootingStar(
+        startX: _random.nextDouble(),
+        startY: _random.nextDouble() * 0.5, // 画面上部に配置
+        length: _random.nextDouble() * 0.1 + 0.05, // 長さは画面の5～15%
+        angle: _random.nextDouble() * 0.5 + 0.7, // 約぀0.7～1.2ラジアン（右下方向）
+        speed: _random.nextDouble() * 0.5 + 0.5, // 速度のバリエーション
+        delay: _random.nextDouble(), // 倍率で遅延を設定
+      ));
+    }
+  }
+  
+  @override
+  void paint(Canvas canvas, Size size) {
+    for (final star in _shootingStars) {
+      // 遅延を考慮したアニメーション値を計算
+      double effectiveAnimation = (animationValue - star.delay) * star.speed;
+      
+      // アニメーション値が0以下または1以上の場合は描画しない
+      if (effectiveAnimation < 0 || effectiveAnimation > 1) continue;
+      
+      // 流れ星の位置を計算
+      final startX = star.startX * size.width;
+      final startY = star.startY * size.height;
+      
+      // 流れ星の終点を計算
+      final endX = startX + cos(star.angle) * star.length * size.width * effectiveAnimation;
+      final endY = startY + sin(star.angle) * star.length * size.height * effectiveAnimation;
+      
+      // 流れ星の尾の長さを計算
+      final tailLength = star.length * size.width * 0.7 * (1 - effectiveAnimation * 0.5);
+      
+      // 流れ星の先頭を描画
+      final headPaint = Paint()
+        ..color = isDarkMode 
+            ? Colors.white.withOpacity(0.9) 
+            : Colors.white.withOpacity(0.8)
+        ..style = PaintingStyle.fill;
+      canvas.drawCircle(Offset(endX, endY), 2.0, headPaint);
+      
+      // 流れ星の尾を描画
+      final tailStart = Offset(endX - cos(star.angle) * tailLength, endY - sin(star.angle) * tailLength);
+      final tailEnd = Offset(endX, endY);
+      
+      // グラデーションを使用して尾を描画
+      final tailPaint = Paint()
+        ..shader = LinearGradient(
+          begin: Alignment.centerLeft,
+          end: Alignment.centerRight,
+          colors: [
+            isDarkMode 
+                ? Colors.white.withOpacity(0) 
+                : Colors.white.withOpacity(0),
+            isDarkMode 
+                ? Colors.white.withOpacity(0.7) 
+                : Colors.white.withOpacity(0.6),
+          ],
+        ).createShader(Rect.fromPoints(tailStart, tailEnd))
+        ..strokeWidth = 1.5
+        ..style = PaintingStyle.stroke;
+      
+      canvas.drawLine(tailStart, tailEnd, tailPaint);
+      
+      // 光のグロー効果
+      final glowPaint = Paint()
+        ..color = isDarkMode 
+            ? Colors.white.withOpacity(0.2) 
+            : Colors.white.withOpacity(0.15)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 3.0;
+      canvas.drawLine(tailStart, tailEnd, glowPaint);
+    }
+  }
+  
+  @override
+  bool shouldRepaint(covariant ShootingStarPainter oldDelegate) {
+    return oldDelegate.animationValue != animationValue;
+  }
+}
+
 
 // チャットの進行状況を示すEnum
 enum ChatPhase {
@@ -472,20 +667,42 @@ class _AIResponseScreenState extends State<AIResponseScreen> with SingleTickerPr
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(
-          'AIと会話中',
-          style: Theme.of(context).textTheme.titleLarge,
+        title: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.nightlight_round,
+              size: 20,
+              color: Theme.of(context).brightness == Brightness.dark 
+                  ? AppTheme.darkPrimaryColor 
+                  : AppTheme.primaryColor,
+            ),
+            const SizedBox(width: 8),
+            Text(
+              '心の対話',
+              style: AppTheme.handwrittenStyle.copyWith(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                color: Theme.of(context).brightness == Brightness.dark 
+                    ? Colors.white 
+                    : AppTheme.primaryColor,
+              ),
+            ),
+          ],
         ),
+        elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.close),
+          icon: const Icon(Icons.arrow_back_ios_rounded),
+          tooltip: '戻る',
           onPressed: () => Navigator.of(context).pop(),
         ),
         bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(40.0),
+          preferredSize: const Size.fromHeight(50.0),
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
             child: Consumer<SubscriptionService>(
               builder: (context, subscriptionService, _) {
+                final isDarkMode = Theme.of(context).brightness == Brightness.dark;
                 final isPremium = subscriptionService.isPremium;
                 final maxTurns = isPremium
                     ? SubscriptionService.premiumConversationTurns
@@ -494,40 +711,89 @@ class _AIResponseScreenState extends State<AIResponseScreen> with SingleTickerPr
                     ? SubscriptionService.premiumConversationLimit
                     : SubscriptionService.freeConversationLimit;
                 
+                // 送信回数に基づく色の設定
+                final progressColor = _currentConversationCount > maxTurns * 0.8
+                    ? Colors.redAccent.withOpacity(isDarkMode ? 0.7 : 1.0)
+                    : _currentConversationCount > maxTurns * 0.5
+                        ? Colors.orangeAccent.withOpacity(isDarkMode ? 0.8 : 1.0)
+                        : (isDarkMode ? AppTheme.darkPrimaryColor : AppTheme.primaryColor);
+                
                 return Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          '送信回数: $_currentConversationCount/$maxTurns',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: AppTheme.secondaryTextColor,
-                            fontWeight: _currentConversationCount > maxTurns * 0.7 ? FontWeight.bold : FontWeight.normal,
-                          ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: isDarkMode 
+                            ? AppTheme.darkBackgroundColor.withOpacity(0.3) 
+                            : AppTheme.backgroundColor.withOpacity(0.3),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: isDarkMode 
+                              ? AppTheme.darkPrimaryColor.withOpacity(0.1) 
+                              : AppTheme.primaryColor.withOpacity(0.1),
                         ),
-                        Text(
-                          '今日の会話: ${subscriptionService.todayConversationCount}/$maxConversations',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: AppTheme.secondaryTextColor,
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Row(
+                            children: [
+                              Icon(
+                                Icons.chat_bubble_outline,
+                                size: 14,
+                                color: isDarkMode 
+                                    ? AppTheme.darkSecondaryTextColor 
+                                    : AppTheme.secondaryTextColor,
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                '送信回数: $_currentConversationCount/$maxTurns',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: isDarkMode 
+                                      ? AppTheme.darkSecondaryTextColor 
+                                      : AppTheme.secondaryTextColor,
+                                  fontWeight: _currentConversationCount > maxTurns * 0.7 ? FontWeight.bold : FontWeight.normal,
+                                ),
+                              ),
+                            ],
                           ),
-                        ),
-                      ],
+                          Row(
+                            children: [
+                              Icon(
+                                Icons.calendar_today_outlined,
+                                size: 14,
+                                color: isDarkMode 
+                                    ? AppTheme.darkSecondaryTextColor 
+                                    : AppTheme.secondaryTextColor,
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                '今日: ${subscriptionService.todayConversationCount}/$maxConversations',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: isDarkMode 
+                                      ? AppTheme.darkSecondaryTextColor 
+                                      : AppTheme.secondaryTextColor,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
                     ),
-                    const SizedBox(height: 4),
+                    const SizedBox(height: 6),
                     // ターン数のプログレスバー
-                    LinearProgressIndicator(
-                      value: _currentConversationCount / maxTurns,
-                      backgroundColor: Colors.grey[300],
-                      valueColor: AlwaysStoppedAnimation<Color>(
-                        _currentConversationCount > maxTurns * 0.8
-                            ? Colors.red
-                            : _currentConversationCount > maxTurns * 0.5
-                                ? Colors.orange
-                                : AppTheme.primaryColor,
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(4),
+                      child: LinearProgressIndicator(
+                        value: _currentConversationCount / maxTurns,
+                        backgroundColor: isDarkMode 
+                            ? Colors.grey[800] 
+                            : Colors.grey[300],
+                        valueColor: AlwaysStoppedAnimation<Color>(progressColor),
+                        minHeight: 5,
                       ),
                     ),
                   ],
@@ -536,88 +802,186 @@ class _AIResponseScreenState extends State<AIResponseScreen> with SingleTickerPr
             ),
           ),
         ),
-        actions: [],
-      ),
-      body: Column(
-        children: [
-          if (_isLoading) // ローディング表示
-            // Loading animation
-            Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const SizedBox(
-                    width: 60,
-                    height: 60,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 3,
-                      valueColor: AlwaysStoppedAnimation<Color>(AppTheme.primaryColor),
-                    ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.info_outline),
+            tooltip: 'ヘルプ',
+            onPressed: () {
+              showDialog(
+                context: context,
+                builder: (context) => AlertDialog(
+                  title: Text('心の対話について'),
+                  content: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('ここでは、あなたの心に寄り添う対話をお楽しみいただけます。'),
+                      const SizedBox(height: 8),
+                      Text('・対話はいつでも終了できます'),
+                      Text('・終了時には対話のまとめが保存されます'),
+                      Text('・過去の対話は「心の軌跡」から確認できます'),
+                    ],
                   ),
-                  const SizedBox(height: 24),
-                  Text(_currentPhase == ChatPhase.ended ? '会話をまとめています...' : 'メッセージを考えています...'),
-                ],
-              ),
-            )
-          else
-            // チャット画面
-            Expanded(
-              child: FadeTransition(
-                opacity: _fadeInAnimation,
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                  child: _buildChatList(),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.of(context).pop(),
+                      child: const Text('閉じる'),
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
+        ],
+      ),
+      body: Container(
+        decoration: BoxDecoration(
+          // 夜空の背景グラデーション
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: Theme.of(context).brightness == Brightness.dark
+                ? [
+                    const Color(0xFF0D1B2A),  // 深い紫がかった青
+                    const Color(0xFF1B263B),  // 深い青
+                  ]
+                : [
+                    const Color(0xFFE6F2FF),  // 薄い青
+                    const Color(0xFFF5F5F5),  // 白に近い色
+                  ],
+          ),
+        ),
+        child: Stack(
+          children: [
+            // 星の背景
+            Positioned.fill(
+              child: CustomPaint(
+                painter: StarSkyPainter(
+                  isDarkMode: Theme.of(context).brightness == Brightness.dark,
                 ),
               ),
             ),
-            
-          // 入力フィールドと会話終了メッセージ
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: (_isConversationOver || _shouldEndConversation) 
-                ? _buildConversationEndedMessage() 
-                : _buildInputField(),
-          ),
-            
-          // 会話終了時のボタン (7ターン経過後または手動終了時)
-          if (_isConversationOver || _shouldEndConversation)
-            Padding(
-              padding: const EdgeInsets.only(bottom: 16.0),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: ElevatedButton(
-                      onPressed: () => Navigator.of(context).pushReplacementNamed('/log'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppTheme.primaryColor,
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(28),
+            // メインコンテンツ
+            Column(
+              children: [
+                if (_isLoading) // ローディング表示
+                  // Loading animation
+                  Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const SizedBox(
+                          width: 60,
+                          height: 60,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 3,
+                            valueColor: AlwaysStoppedAnimation<Color>(AppTheme.primaryColor),
+                          ),
                         ),
-                      ),
-                      child: const Text('記録を見る'),
+                        const SizedBox(height: 24),
+                        Text(_currentPhase == ChatPhase.ended ? '会話をまとめています...' : 'メッセージを考えています...'),
+                      ],
                     ),
-                  ),
-                  const SizedBox(width: 16),
+                  )
+                else
+                  // チャット画面
                   Expanded(
-                    child: OutlinedButton(
-                      onPressed: () => Navigator.of(context).pushReplacementNamed('/check-in'),
-                      style: OutlinedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                        side: BorderSide(color: AppTheme.primaryColor),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(28),
-                        ),
+                    child: FadeTransition(
+                      opacity: _fadeInAnimation,
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                        child: _buildChatList(),
                       ),
-                      child: const Text('閉じる'),
+                    ),
+                  ), // Added comma after Expanded widget
+                
+                // 入力フィールドと会話終了メッセージ
+                Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: (_isConversationOver || _shouldEndConversation) 
+                      ? _buildConversationEndedMessage() 
+                      : _buildInputField(),
+                ), // Added comma after Padding for input field, removed misleading comment
+
+                // 会話終了時のボタン (7ターン経過後または手動終了時)
+                if (_isConversationOver || _shouldEndConversation)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 16.0),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: ElevatedButton(
+                            onPressed: () => Navigator.of(context).pushReplacementNamed('/log'),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Theme.of(context).brightness == Brightness.dark 
+                                  ? Colors.white 
+                                  : AppTheme.primaryColor,
+                              foregroundColor: Theme.of(context).brightness == Brightness.dark 
+                                  ? AppTheme.primaryColor 
+                                  : Colors.white,
+                              elevation: 2,
+                              padding: const EdgeInsets.symmetric(vertical: 14),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(28),
+                              ),
+                            ),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  Icons.history,
+                                  size: 18,
+                                ),
+                                const SizedBox(width: 8),
+                                Text('対話記録を見る'),
+                              ],
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: OutlinedButton(
+                            onPressed: () => Navigator.of(context).pushReplacementNamed('/check-in'),
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: Theme.of(context).brightness == Brightness.dark 
+                                  ? Colors.white70 
+                                  : AppTheme.primaryColor,
+                              padding: const EdgeInsets.symmetric(vertical: 14),
+                              side: BorderSide(
+                                color: Theme.of(context).brightness == Brightness.dark 
+                                    ? Colors.white70 
+                                    : AppTheme.primaryColor,
+                              ),
+                              backgroundColor: Theme.of(context).brightness == Brightness.dark 
+                                  ? Colors.black26 
+                                  : Colors.white,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(28),
+                              ),
+                            ),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  Icons.home_outlined,
+                                  size: 18,
+                                ),
+                                const SizedBox(width: 8),
+                                Text('ホームに戻る'),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ],
               ),
-            ),
+            // Removed extra closing parenthesis that was here
         ],
       ),
-    );
+    ), // Close Container
+    ); // Close Scaffold
   }
   
   // チャットリストを構築
@@ -643,23 +1007,51 @@ class _AIResponseScreenState extends State<AIResponseScreen> with SingleTickerPr
   // メッセージバブルを構築
   Widget _buildMessageBubble(Message message) {
     final isUser = message.isUser;
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
     final preferencesService = Provider.of<PreferencesService>(context, listen: false);
     final selectedCharacterId = preferencesService.selectedCharacterId;
     
+    // テーマに応じた色の設定
+    final primaryColor = isDarkMode ? AppTheme.darkPrimaryColor : AppTheme.primaryColor;
+    final accentColor = isDarkMode ? AppTheme.darkAccentColor : AppTheme.accentColor;
+    
+    // ユーザー側の吹き出しの色を調整（星空背景に溶け込まないように透明度を上げ、色をより鮮やかに）
+    final userBubbleColor = isDarkMode 
+        ? primaryColor.withOpacity(0.3) // 透明度を上げる（0.15 -> 0.3）
+        : primaryColor.withOpacity(0.25); // 透明度を上げる（0.1 -> 0.25）
+    
+    // AI側の吹き出しの色も微調整
+    final aiBubbleColor = isDarkMode 
+        ? accentColor.withOpacity(0.2) 
+        : accentColor.withOpacity(0.15);
+    
+    final textColor = isDarkMode ? AppTheme.darkTextColor : AppTheme.textColor;
+    
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8.0),
+      padding: const EdgeInsets.symmetric(vertical: 12.0),
       child: Row(
         mainAxisAlignment: isUser ? MainAxisAlignment.end : MainAxisAlignment.start,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          if (!isUser) ...[
+          if (!isUser) ...[  
             // 選択したキャラクターアイコンを表示
             Container(
               width: 40,
               height: 40,
               decoration: BoxDecoration(
-                color: AppTheme.primaryColor.withOpacity(0.1),
+                color: isDarkMode 
+                    ? accentColor.withOpacity(0.15) 
+                    : accentColor.withOpacity(0.1),
                 shape: BoxShape.circle,
+                boxShadow: [
+                  BoxShadow(
+                    color: isDarkMode 
+                        ? Colors.black.withOpacity(0.2) 
+                        : Colors.grey.withOpacity(0.2),
+                    blurRadius: 4,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
               ),
               child: ClipOval(
                 child: CustomPaint(
@@ -677,32 +1069,86 @@ class _AIResponseScreenState extends State<AIResponseScreen> with SingleTickerPr
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               decoration: BoxDecoration(
-                color: isUser 
-                    ? AppTheme.primaryColor.withOpacity(0.1)
-                    : AppTheme.accentColor.withOpacity(0.1),
+                color: isUser ? userBubbleColor : aiBubbleColor,
                 borderRadius: BorderRadius.circular(20).copyWith(
-                  bottomLeft: isUser ? const Radius.circular(20) : const Radius.circular(0),
-                  bottomRight: isUser ? const Radius.circular(0) : const Radius.circular(20),
+                  bottomLeft: isUser ? const Radius.circular(20) : const Radius.circular(4),
+                  bottomRight: isUser ? const Radius.circular(4) : const Radius.circular(20),
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: isDarkMode 
+                        ? Colors.black.withOpacity(0.1) 
+                        : Colors.grey.withOpacity(0.1),
+                    blurRadius: 2,
+                    offset: const Offset(0, 1),
+                  ),
+                ],
+                border: Border.all(
+                  color: isUser 
+                      ? primaryColor.withOpacity(isDarkMode ? 0.2 : 0.1) 
+                      : accentColor.withOpacity(isDarkMode ? 0.2 : 0.1),
+                  width: 1,
                 ),
               ),
-              child: Text(
-                message.content,
-                style: isUser
-                    ? Theme.of(context).textTheme.bodyMedium
-                    : AppTheme.handwrittenStyle.copyWith(
-                        fontSize: 16,
-                        height: 1.5,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // メッセージ本文
+                  Text(
+                    message.content,
+                    style: isUser
+                        ? Theme.of(context).textTheme.bodyMedium?.copyWith(
+                            color: textColor,
+                            height: 1.5,
+                          )
+                        : AppTheme.handwrittenStyle.copyWith(
+                            fontSize: 16,
+                            height: 1.5,
+                            color: isDarkMode ? AppTheme.darkTextColor : AppTheme.textColor,
+                          ),
+                  ),
+                  // メッセージ送信時間を表示
+                  const SizedBox(height: 4),
+                  Align(
+                    alignment: isUser ? Alignment.centerRight : Alignment.centerLeft,
+                    child: Text(
+                      // 実際のアプリでは、message.timestampから時間をフォーマットして表示
+                      '今',
+                      style: TextStyle(
+                        fontSize: 10,
+                        color: isDarkMode 
+                            ? AppTheme.darkSecondaryTextColor.withOpacity(0.7) 
+                            : AppTheme.secondaryTextColor.withOpacity(0.7),
                       ),
+                    ),
+                  ),
+                ],
               ),
             ),
           ),
           if (isUser) ...[  
             const SizedBox(width: 8),
-            CircleAvatar(
-              backgroundColor: AppTheme.primaryColor.withOpacity(0.2),
+            Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: isDarkMode 
+                    ? primaryColor.withOpacity(0.2) 
+                    : primaryColor.withOpacity(0.15),
+                shape: BoxShape.circle,
+                boxShadow: [
+                  BoxShadow(
+                    color: isDarkMode 
+                        ? Colors.black.withOpacity(0.2) 
+                        : Colors.grey.withOpacity(0.2),
+                    blurRadius: 4,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
               child: Icon(
                 Icons.person,
-                color: AppTheme.primaryColor,
+                color: isDarkMode ? primaryColor : primaryColor,
                 size: 20,
               ),
             ),
@@ -714,13 +1160,59 @@ class _AIResponseScreenState extends State<AIResponseScreen> with SingleTickerPr
   
   // 入力フィールドを構築
   Widget _buildConversationEndedMessage() {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    final primaryColor = isDarkMode ? AppTheme.darkPrimaryColor : AppTheme.primaryColor;
+    final secondaryTextColor = isDarkMode ? AppTheme.darkSecondaryTextColor : AppTheme.secondaryTextColor;
+    
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: 16.0, horizontal: 8.0),
-      child: Text(
-        '''AIとの会話は終了しました。お疲れ様でした。
-下のボタンからログを確認したり、ホームに戻ったりできます。''',
-        textAlign: TextAlign.center,
-        style: TextStyle(color: AppTheme.secondaryTextColor, fontSize: 15),
+      padding: const EdgeInsets.symmetric(vertical: 20.0, horizontal: 16.0),
+      margin: const EdgeInsets.symmetric(vertical: 8.0),
+      decoration: BoxDecoration(
+        color: isDarkMode 
+            ? AppTheme.darkBackgroundColor.withOpacity(0.3) 
+            : AppTheme.backgroundColor.withOpacity(0.3),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: primaryColor.withOpacity(0.2),
+          width: 1,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: isDarkMode 
+                ? Colors.black.withOpacity(0.1) 
+                : Colors.grey.withOpacity(0.1),
+            blurRadius: 4,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          Icon(
+            Icons.nightlight_round,
+            color: primaryColor.withOpacity(0.7),
+            size: 32,
+          ),
+          const SizedBox(height: 12),
+          Text(
+            '心の対話が終了しました',
+            style: AppTheme.handwrittenStyle.copyWith(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: isDarkMode ? Colors.white : AppTheme.primaryColor,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            '今日のあなたの心に、少しでも安らぎが訪れましたか。対話のまとめが保存されました。',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: secondaryTextColor,
+              fontSize: 14,
+              height: 1.5,
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -762,71 +1254,112 @@ class _AIResponseScreenState extends State<AIResponseScreen> with SingleTickerPr
   }
 
   Widget _buildInputField() {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    final primaryColor = isDarkMode ? AppTheme.darkPrimaryColor : AppTheme.primaryColor;
+    final accentColor = isDarkMode ? AppTheme.darkAccentColor : AppTheme.accentColor;
+    final cardColor = isDarkMode ? AppTheme.darkCardColor : Theme.of(context).cardColor;
+    final secondaryTextColor = isDarkMode ? AppTheme.darkSecondaryTextColor : AppTheme.secondaryTextColor;
+    
     return Column(
       children: [
-        Row(
-          children: [
-            Expanded(
-              child: TextField(
-                controller: _textController,
-                decoration: InputDecoration(
-                  hintText: 'メッセージを入力...',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(24),
-                    borderSide: BorderSide(color: AppTheme.primaryColor.withOpacity(0.5)),
+        // 入力フィールドと送信ボタン
+        Container(
+          decoration: BoxDecoration(
+            color: isDarkMode 
+                ? AppTheme.darkBackgroundColor.withOpacity(0.2) 
+                : AppTheme.backgroundColor.withOpacity(0.2),
+            borderRadius: BorderRadius.circular(28),
+            border: Border.all(
+              color: primaryColor.withOpacity(0.1),
+              width: 1,
+            ),
+          ),
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+          child: Row(
+            children: [
+              Expanded(
+                child: TextField(
+                  controller: _textController,
+                  decoration: InputDecoration(
+                    hintText: '気持ちをありのままに...',
+                    hintStyle: TextStyle(
+                      color: secondaryTextColor.withOpacity(0.8),
+                      fontStyle: FontStyle.italic,
+                    ),
+                    border: InputBorder.none,
+                    enabledBorder: InputBorder.none,
+                    focusedBorder: InputBorder.none,
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    filled: false,
                   ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(24),
-                    borderSide: BorderSide(color: AppTheme.primaryColor.withOpacity(0.5)),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(24),
-                    borderSide: BorderSide(color: AppTheme.primaryColor),
-                  ),
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                  filled: true,
-                  fillColor: Theme.of(context).cardColor,
+                  style: Theme.of(context).textTheme.bodyMedium,
+                  maxLines: 1,
+                  textInputAction: TextInputAction.send,
+                  onSubmitted: (_) => _sendMessage(),
+                  enabled: !_isSending && !_isConversationOver && !_shouldEndConversation,
                 ),
-                maxLines: 1,
-                textInputAction: TextInputAction.send,
-                onSubmitted: (_) => _sendMessage(),
-                enabled: !_isSending && !_isConversationOver && !_shouldEndConversation,
               ),
-            ),
-            const SizedBox(width: 8),
-            Container(
-              decoration: BoxDecoration(
-                color: AppTheme.primaryColor,
-                shape: BoxShape.circle,
+              const SizedBox(width: 4),
+              Container(
+                decoration: BoxDecoration(
+                  color: primaryColor,
+                  shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(
+                      color: primaryColor.withOpacity(0.3),
+                      blurRadius: 4,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: IconButton(
+                  icon: _isSending
+                      ? const SizedBox(
+                          width: 24,
+                          height: 24,
+                          child: CircularProgressIndicator(
+                            color: Colors.white,
+                            strokeWidth: 2,
+                          ),
+                        )
+                      : const Icon(Icons.send_rounded, color: Colors.white),
+                  onPressed: _isSending || _isConversationOver ? null : _sendMessage,
+                  tooltip: '送信',
+                ),
               ),
-              child: IconButton(
-                icon: _isSending
-                    ? const SizedBox(
-                        width: 24,
-                        height: 24,
-                        child: CircularProgressIndicator(
-                          color: Colors.white,
-                          strokeWidth: 2,
-                        ),
-                      )
-                    : const Icon(Icons.send, color: Colors.white),
-                onPressed: _isSending || _isConversationOver ? null : _sendMessage,
-              ),
-            ),
-          ],
+            ],
+          ),
         ),
         
         // 会話を終了するボタン
-        const SizedBox(height: 12),
-        SizedBox(
+        const SizedBox(height: 16),
+        Container(
           width: double.infinity,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(28),
+            boxShadow: [
+              BoxShadow(
+                color: isDarkMode 
+                    ? Colors.black.withOpacity(0.1) 
+                    : Colors.grey.withOpacity(0.1),
+                blurRadius: 2,
+                offset: const Offset(0, 1),
+              ),
+            ],
+          ),
           child: OutlinedButton.icon(
-            icon: const Icon(Icons.check_circle_outline),
-            label: const Text('会話を終了する'),
+            icon: Icon(
+              Icons.nightlight_round,
+              color: isDarkMode ? Colors.white : AppTheme.primaryColor,
+              size: 18,
+            ),
+            label: Text('対話を終了する'),
             onPressed: _isSending || _isConversationOver ? null : _endConversation,
             style: OutlinedButton.styleFrom(
-              padding: const EdgeInsets.symmetric(vertical: 12),
-              side: BorderSide(color: AppTheme.primaryColor),
+              foregroundColor: isDarkMode ? Colors.white : AppTheme.primaryColor,
+              padding: const EdgeInsets.symmetric(vertical: 14),
+              side: BorderSide(color: isDarkMode ? Colors.white70 : AppTheme.primaryColor),
+              backgroundColor: isDarkMode ? Colors.black26 : Colors.white,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(28),
               ),

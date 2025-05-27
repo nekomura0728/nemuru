@@ -22,7 +22,7 @@ class PreferencesService extends ChangeNotifier {
   // Default values
   bool _onboardingCompleted = false;
   bool _notificationsEnabled = true;
-  bool _isDarkMode = false;
+  bool _isDarkMode = true; // 「眠れない夜に」コンセプトに合わせてダークモードをデフォルトに
   int _selectedCharacterId = 0; // デフォルトは左上の犬アイコン
   bool _isPremium = false; // プレミアム機能のフラグ
   String _deviceId = ''; // デバイスID
@@ -57,7 +57,7 @@ class PreferencesService extends ChangeNotifier {
   void _loadPreferences() {
     _onboardingCompleted = _prefs.getBool(_onboardingCompletedKey) ?? false;
     _notificationsEnabled = _prefs.getBool(_notificationsEnabledKey) ?? true;
-    _isDarkMode = _prefs.getBool(_isDarkModeKey) ?? false;
+    _isDarkMode = _prefs.getBool(_isDarkModeKey) ?? true; // ダークモードをデフォルトに
     _selectedCharacterId = _prefs.getInt(_selectedCharacterIdKey) ?? 0;
     _isPremium = _prefs.getBool(_isPremiumKey) ?? false;
     
