@@ -54,7 +54,7 @@ Try inserting an identifier before ')'.
 
 ## 他の潜在的な問題ファイル
 
-Gitステータスで変更が検出された以下のファイルも確認が必要です：
+Gitステータスで変更が検出された以下のファイルも確認が必要です:
 
 ### 1. `lib/screens/ai_response_screen.dart`
 
