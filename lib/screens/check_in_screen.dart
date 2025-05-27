@@ -40,7 +40,7 @@ class _CheckInScreenState extends State<CheckInScreen> {
     super.dispose();
   }
 
-  void _submitCheckIn() {
+  Future<void> _submitCheckIn() async {
     // サブスクリプションサービスを取得
     final subscriptionService = Provider.of<SubscriptionService>(context, listen: false);
     final chatLogService = Provider.of<ChatLogService>(context, listen: false);
@@ -58,10 +58,17 @@ class _CheckInScreenState extends State<CheckInScreen> {
       return;
     }
     
-    // 無料プランの制限チェック
-    if (subscriptionService.hasReachedFreeLimit) {
-      _showFreeUsageLimitDialog();
-      return;
+    // 制限チェック
+    if (subscriptionService.isPremium) {
+      if (subscriptionService.hasReachedPremiumLimit) {
+        _showPremiumUsageLimitDialog();
+        return;
+      }
+    } else { // 無料プランユーザー
+      if (subscriptionService.hasReachedFreeLimit) {
+        _showFreeUsageLimitDialog();
+        return;
+      }
     }
 
     // チャットログを作成
@@ -70,23 +77,48 @@ class _CheckInScreenState extends State<CheckInScreen> {
     final mood = _selectedMood!;
     
     // デバッグ用に値を表示
-    print('Debug - Sending to AI response screen: characterId=$characterId, mood=$mood, reflection=$reflection');
+    print('Debug - Creating log and sending to AI response screen: characterId=$characterId, mood=$mood, reflection=$reflection');
+
+    // ChatLogを先に作成
+    final newLog = await chatLogService.createLog(
+      mood: mood,
+      reflection: reflection.isNotEmpty ? reflection : null, // 空の場合はnullを渡す
+      characterId: characterId,
+    );
     
-    // ログ作成前に画面遷移するように変更
+    // AIResponseScreenにChatLogオブジェクトを渡して遷移
     Navigator.of(context).pushNamed(
       '/ai-response',
       arguments: {
-        'characterId': characterId,
-        'mood': mood,
-        'initialReflection': reflection,
+        'chatLog': newLog, // 作成したログを渡す
+        // characterId, mood, initialReflection は newLog に含まれるため、個別には不要
       },
     );
-    
-    // ログは別途作成するように変更
-    chatLogService.createLog(
-      mood: mood,
-      reflection: reflection,
-      characterId: characterId,
+
+    // Reset input fields after successful submission
+    if (mounted) {
+      setState(() {
+        _textController.clear();
+        _selectedMood = null;
+      });
+    }
+  }
+
+  // プレミアムプランの制限に達した場合のダイアログ
+  void _showPremiumUsageLimitDialog() {
+    final limit = SubscriptionService.premiumConversationLimit;
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('会話回数の上限に達しました'),
+        content: Text('プレミアムプランの1日の会話制限($limit回)に達しました。会話回数は毎日午前0時にリセットされます。'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('閉じる'),
+          ),
+        ],
+      ),
     );
   }
 
@@ -99,7 +131,7 @@ class _CheckInScreenState extends State<CheckInScreen> {
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Text('無料プランでは1日に5回までのAI会話が可能です。会話回数は毎日午前0時にリセットされます。'),
+            const Text('無料プランでは1日に2回までのAI会話が可能です。会話回数は毎日午前0時にリセットされます。'),
             const SizedBox(height: 16),
             const Text('プレミアムプランにアップグレードすると、実質無制限の会話をお楽しみいただけます。'),
             const SizedBox(height: 8),

@@ -101,6 +101,19 @@ class ChatLogService extends ChangeNotifier {
     );
 
     try {
+      // 会話カウントを増加させる前に、制限チェックを行う
+      final isPremium = _subscriptionService.isPremium;
+      final todayCount = _subscriptionService.todayConversationCount;
+      final limit = isPremium 
+          ? SubscriptionService.premiumConversationLimit 
+          : SubscriptionService.freeConversationLimit;
+          
+      // 既に制限に達している場合はエラーをスロー
+      if ((isPremium && todayCount >= SubscriptionService.premiumConversationLimit) ||
+          (!isPremium && todayCount >= SubscriptionService.freeConversationLimit)) {
+        throw Exception('会話制限に達しました。プレミアムプラン: $isPremium, 今日の会話数: $todayCount, 制限: $limit');
+      }
+      
       final logData = newLog.toJson();
       await _supabase.from(_tableName).insert(logData);
       _logs.insert(0, newLog);

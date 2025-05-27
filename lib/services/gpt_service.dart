@@ -20,7 +20,7 @@ class GPTService {
   List<Message> get conversationHistory => List.unmodifiable(_conversationHistory);
   
   // 会話回数を取得（初回の気分選択と質問応答を除く）
-  int get messageCount => _isInitialExchangeComplete ? _messageCount : 0;
+  int get messageCount => _messageCount;
   
   // 全メッセージ数を取得（初回の気分選択と質問応答も含む）
   int get totalMessageCount => _conversationHistory.length;
@@ -43,11 +43,7 @@ class GPTService {
   void addUserMessage(String userInput) {
     final userMessage = Message(content: userInput, isUser: true);
     _conversationHistory.add(userMessage);
-    
-    // 初回の気分選択と質問応答が完了していれば、会話カウントを増やす
-    if (_isInitialExchangeComplete) {
-      _messageCount++;
-    }
+    _messageCount++; // ユーザーメッセージは常にカウント
   }
 
   // AIの応答を生成し、会話履歴に追加する（非同期処理）
@@ -77,10 +73,8 @@ class GPTService {
     final aiMessage = Message(content: aiResponse, isUser: false);
     _conversationHistory.add(aiMessage);
     
-    // 初回の気分選択と質問応答が完了していれば、会話カウントを増やす
-    if (_isInitialExchangeComplete) {
-      _messageCount++;
-    } else if (_conversationHistory.length >= 2) {
+    // 初回の気分選択と質問応答が完了したかどうかの判定のみ行う
+    if (!_isInitialExchangeComplete && _conversationHistory.length >= 2) {
       // 初回の気分選択と質問応答が完了したことをマーク
       _isInitialExchangeComplete = true;
     }
@@ -90,17 +84,20 @@ class GPTService {
 
   // 会話を開始する
   Future<String> startConversation(String initialReflection, String mood) async {
-    clearConversation();
+    _conversationHistory.clear();
+    _messageCount = 0; // Reset count
+    _isInitialExchangeComplete = false;
     _currentMood = mood;
-    _isInitialExchangeComplete = false; // 初回の気分選択と質問応答はまだ完了していない
     
     // ユーザーが最初の振り返りを入力した場合、それを最初のユーザーメッセージとして追加
     if (initialReflection.isNotEmpty) {
-      addUserMessage(initialReflection);
+      final userMessage = Message(content: initialReflection, isUser: true);
+      _conversationHistory.add(userMessage);
+      _messageCount = 1; // First user message
     }
     
     // AIの最初の応答を生成。initialReflectionをAPIへのコンテキストとして渡す。
-    // _buildMessages内で _messageCount (addUserMessage後) や _currentMood を見て初回プロンプトを調整する。
+    // _buildMessages内で _messageCount や _currentMood を見て初回プロンプトを調整する。
     return await generateAndAddAIResponse(initialContextOverride: initialReflection);
   }
   

@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:nemuru/services/preferences_service.dart';
 import 'package:nemuru/services/subscription_service.dart';
 import 'package:nemuru/services/purchase_service.dart';
+import 'package:flutter/foundation.dart'; // kDebugModeのため
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:in_app_purchase/in_app_purchase.dart';
@@ -80,7 +81,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
               activeColor: AppTheme.primaryColor,
             ),
           ),
-          _buildThemeSelector(context, preferencesService),
           const Divider(),
           
           // キャラクター設定
@@ -158,106 +158,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
           fontSize: 14,
           fontWeight: FontWeight.bold,
           color: AppTheme.primaryColor,
-        ),
-      ),
-    );
-  }
-  
-  Widget _buildThemeSelector(BuildContext context, PreferencesService preferencesService) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text('アプリテーマ'),
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              _buildThemeOption(
-                context,
-                'ライト',
-                AppTheme.backgroundColor,
-                preferencesService.selectedTheme == 'light',
-                () async {
-                  await preferencesService.setSelectedTheme('light');
-                  await preferencesService.setIsDarkMode(false);
-                },
-              ),
-              const SizedBox(width: 12),
-              _buildThemeOption(
-                context,
-                'ダーク',
-                AppTheme.darkBackgroundColor,
-                preferencesService.selectedTheme == 'dark',
-                () async {
-                  await preferencesService.setSelectedTheme('dark');
-                  await preferencesService.setIsDarkMode(true);
-                },
-              ),
-              const SizedBox(width: 12),
-              _buildThemeOption(
-                context,
-                'ナチュラル',
-                const Color(0xFFF8F0E5),
-                preferencesService.selectedTheme == 'natural',
-                () async {
-                  await preferencesService.setSelectedTheme('natural');
-                  await preferencesService.setIsDarkMode(false);
-                },
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-  
-  Widget _buildThemeOption(
-    BuildContext context,
-    String label,
-    Color color,
-    bool isSelected,
-    VoidCallback onTap,
-  ) {
-    return Expanded(
-      child: GestureDetector(
-        onTap: onTap,
-        child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 12),
-          decoration: BoxDecoration(
-            color: color,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(
-              color: isSelected ? AppTheme.primaryColor : Colors.transparent,
-              width: 2,
-            ),
-            boxShadow: isSelected
-                ? [
-                    BoxShadow(
-                      color: AppTheme.primaryColor.withOpacity(0.3),
-                      blurRadius: 8,
-                      offset: const Offset(0, 2),
-                    ),
-                  ]
-                : null,
-          ),
-          child: Column(
-            children: [
-              Icon(
-                Icons.check_circle,
-                color: isSelected ? AppTheme.primaryColor : Colors.transparent,
-                size: 20,
-              ),
-              const SizedBox(height: 4),
-              Text(
-                label,
-                style: TextStyle(
-                  color: color.computeLuminance() > 0.5 ? Colors.black87 : Colors.white,
-                  fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                ),
-              ),
-            ],
-          ),
         ),
       ),
     );
@@ -359,8 +259,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   ),
                 ],
               ),
-            // エラーメッセージがあれば表示
-            if (purchaseService.errorMessage != null && purchaseService.errorMessage!.isNotEmpty)
+            // エラーメッセージがあれば表示 (デバッグモードでは表示しない)
+            if (purchaseService.errorMessage != null && 
+                purchaseService.errorMessage!.isNotEmpty && 
+                !kDebugMode)
               Padding(
                 padding: const EdgeInsets.only(top: 8.0),
                 child: Text(
@@ -404,25 +306,32 @@ class _SettingsScreenState extends State<SettingsScreen> {
     // 購入サービスを取得
     final purchaseService = Provider.of<PurchaseService>(context, listen: false);
     final products = purchaseService.products;
-    
-    // 利用可能な商品がない場合
-    if (products.isEmpty) {
+    final bool isReleaseMode = const bool.fromEnvironment('dart.vm.product');
+
+    // リリースモードで利用可能な商品がない場合のみメッセージ表示して早期リターン
+    if (products.isEmpty && isReleaseMode) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('現在、購入可能な商品がありません。後ほどお試しください。')),
       );
       return;
     }
-    
-    // 月額プランと年額プランを分ける
-    final monthlyProduct = products.firstWhere(
-      (product) => product.id.contains('monthly'),
-      orElse: () => products.first,
-    );
-    
-    final yearlyProduct = products.length > 1 ? products.firstWhere(
-      (product) => product.id.contains('yearly'),
-      orElse: () => null,
-    ) : null;
+
+    // 月額プランと年額プランを安全に取得
+    ProductDetails? monthlyProduct;
+    try {
+      monthlyProduct = products.firstWhere((p) => p.id.contains('monthly'));
+    } catch (e) {
+      monthlyProduct = null; // 見つからない場合はnull
+    }
+
+    ProductDetails? yearlyProduct;
+    if (products.isNotEmpty) { // productsが空でない場合のみ年額プランを検索
+      try {
+        yearlyProduct = products.firstWhere((p) => p.id.contains('yearly'));
+      } catch (e) {
+        yearlyProduct = null; // 見つからない場合はnull
+      }
+    }
     
     showDialog(
       context: context,
@@ -431,16 +340,29 @@ class _SettingsScreenState extends State<SettingsScreen> {
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            // 実際の商品情報があれば表示
-            Text(
-              '月額 ${monthlyProduct.price}',
-              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-            if (yearlyProduct != null) ...[  
+            // 実際の商品情報があれば表示、なければデバッグ用プレースホルダ
+            if (monthlyProduct != null) 
+              Text(
+                '月額 ${monthlyProduct.price}',
+                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              )
+            else if (!isReleaseMode) // デバッグモードで月額商品がない場合
+              const Text(
+                '月額プラン (デバッグ用)',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+            
+            if (yearlyProduct != null) ...[
               const SizedBox(height: 8),
               Text(
                 '年額 ${yearlyProduct.price} (お得なプラン)',
                 style: const TextStyle(fontSize: 16),
+              ),
+            ] else if (!isReleaseMode && monthlyProduct == null) ...[ // デバッグモードで年額商品もなく、月額もなかった場合
+              const SizedBox(height: 8),
+              const Text(
+                '年額プラン (デバッグ用)',
+                style: TextStyle(fontSize: 16),
               ),
             ],
             const SizedBox(height: 16),
@@ -463,38 +385,49 @@ class _SettingsScreenState extends State<SettingsScreen> {
             onPressed: () => Navigator.of(context).pop(),
             child: const Text('キャンセル'),
           ),
-          if (yearlyProduct != null)
+          // 年額プラン購入ボタン (商品があるかデバッグモードの場合に表示)
+          if (yearlyProduct != null || (!isReleaseMode && (monthlyProduct == null || products.isEmpty))) // デバッグで商品がない場合も年額モックボタンを表示
             ElevatedButton(
               onPressed: () async {
                 Navigator.of(context).pop();
-                await purchaseService.purchaseProduct(yearlyProduct);
+                if (yearlyProduct != null) {
+                  await purchaseService.purchaseProduct(yearlyProduct);
+                } else if (!isReleaseMode) { // デバッグモードで年額商品がない場合、モック購入
+                  final subscriptionService = Provider.of<SubscriptionService>(context, listen: false);
+                  await subscriptionService.setPremium(true); 
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('デバッグモード: 年額プラン(仮)にアップグレードしました！')),
+                  );
+                }
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppTheme.accentColor,
               ),
-              child: const Text('年額プランを購入'),
+              child: Text(yearlyProduct != null ? '年額プランを購入' : '年額プランを試す (デバッグ)'),
             ),
-          ElevatedButton(
-            onPressed: () async {
-              Navigator.of(context).pop();
-              // デバッグモードの場合はモック購入を使用
-              if (kDebugMode) {
-                final preferencesService = Provider.of<PreferencesService>(context, listen: false);
-                final subscriptionService = Provider.of<SubscriptionService>(context, listen: false);
-                await subscriptionService.setPremium(true);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('デバッグモード: プレミアムプランにアップグレードしました！')),
-                );
-              } else {
-                // 実際の購入処理
-                await purchaseService.purchaseProduct(monthlyProduct);
-              }
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppTheme.accentColor,
+
+          // 月額プラン購入ボタン (商品があるかデバッグモードの場合に表示)
+          if (monthlyProduct != null || !isReleaseMode)
+            ElevatedButton(
+              onPressed: () async {
+                Navigator.of(context).pop();
+                // デバッグモードまたは月額商品がない場合はモック購入を使用
+                if (!isReleaseMode || monthlyProduct == null) {
+                  final subscriptionService = Provider.of<SubscriptionService>(context, listen: false);
+                  await subscriptionService.setPremium(true);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('デバッグモード: 月額プラン(仮)にアップグレードしました！')),
+                  );
+                } else if (monthlyProduct != null) {
+                  // 実際の購入処理 (monthlyProductがnullでないことを保証)
+                  await purchaseService.purchaseProduct(monthlyProduct);
+                }
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppTheme.accentColor,
+              ),
+              child: Text(monthlyProduct != null ? '月額プランを購入' : '月額プランを試す (デバッグ)'),
             ),
-            child: const Text('月額プランを購入'),
-          ),
         ],
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),

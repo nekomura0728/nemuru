@@ -9,7 +9,6 @@ class PreferencesService extends ChangeNotifier {
   static const String _onboardingCompletedKey = 'onboarding_completed';
   static const String _notificationsEnabledKey = 'notifications_enabled';
   static const String _isDarkModeKey = 'is_dark_mode';
-  static const String _selectedThemeKey = 'selected_theme';
   static const String _selectedCharacterIdKey = 'selected_character_id';
   static const String _isPremiumKey = 'is_premium';
   static const String _deviceIdKey = 'device_id';
@@ -24,7 +23,6 @@ class PreferencesService extends ChangeNotifier {
   bool _onboardingCompleted = false;
   bool _notificationsEnabled = true;
   bool _isDarkMode = false;
-  String _selectedTheme = 'natural'; // natural, light, dark
   int _selectedCharacterId = 0; // デフォルトは左上の犬アイコン
   bool _isPremium = false; // プレミアム機能のフラグ
   String _deviceId = ''; // デバイスID
@@ -39,7 +37,6 @@ class PreferencesService extends ChangeNotifier {
   bool get onboardingCompleted => _onboardingCompleted;
   bool get notificationsEnabled => _notificationsEnabled;
   bool get isDarkMode => _isDarkMode;
-  String get selectedTheme => _selectedTheme;
   int get selectedCharacterId => _selectedCharacterId;
   bool get isPremium => _isPremium;
   String get deviceId => _deviceId;
@@ -61,7 +58,6 @@ class PreferencesService extends ChangeNotifier {
     _onboardingCompleted = _prefs.getBool(_onboardingCompletedKey) ?? false;
     _notificationsEnabled = _prefs.getBool(_notificationsEnabledKey) ?? true;
     _isDarkMode = _prefs.getBool(_isDarkModeKey) ?? false;
-    _selectedTheme = _prefs.getString(_selectedThemeKey) ?? 'natural';
     _selectedCharacterId = _prefs.getInt(_selectedCharacterIdKey) ?? 0;
     _isPremium = _prefs.getBool(_isPremiumKey) ?? false;
     
@@ -107,13 +103,6 @@ class PreferencesService extends ChangeNotifier {
   Future<void> setIsDarkMode(bool darkMode) async {
     _isDarkMode = darkMode;
     await _prefs.setBool(_isDarkModeKey, darkMode);
-    notifyListeners();
-  }
-  
-  // Set theme
-  Future<void> setSelectedTheme(String theme) async {
-    _selectedTheme = theme;
-    await _prefs.setString(_selectedThemeKey, theme);
     notifyListeners();
   }
   

@@ -69,14 +69,14 @@ class _AIResponseScreenState extends State<AIResponseScreen> with SingleTickerPr
   // 会話が終了条件を満たしているかチェック
   bool get _shouldEndConversation {
     final subscriptionService = Provider.of<SubscriptionService>(context, listen: false);
-    // プレミアムユーザーは50回まで、無料ユーザーは7回まで
+    // プレミアムユーザーは送信30回まで、無料ユーザーは送信7回まで
     final maxTurns = subscriptionService.isPremium
         ? SubscriptionService.premiumConversationTurns
         : SubscriptionService.freeConversationTurns;
     return _gptService.messageCount >= maxTurns;
   }
   
-  // 現在の会話カウントを取得
+  // 現在のユーザー送信回数を取得
   int get _currentConversationCount => _gptService.messageCount;
 
   @override
@@ -165,6 +165,62 @@ class _AIResponseScreenState extends State<AIResponseScreen> with SingleTickerPr
   // このメソッドは新しいフローでは不要なので削除 (またはコメントアウト)
   // Future<void> _getAIResponse() async { ... }
 
+  // 会話セッションを開始する前に会話制限をチェック
+  Future<bool> _checkConversationLimits() async {
+    final subscriptionService = Provider.of<SubscriptionService>(context, listen: false);
+    
+    // 会話回数制限のチェック
+    if (subscriptionService.hasReachedFreeLimit || subscriptionService.hasReachedPremiumLimit) {
+      // 制限に達している場合、ダイアログを表示
+      if (mounted) {
+        final isPremium = subscriptionService.isPremium;
+        final limit = isPremium 
+            ? SubscriptionService.premiumConversationLimit 
+            : SubscriptionService.freeConversationLimit;
+            
+        await showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (context) => AlertDialog(
+            title: const Text('会話制限に達しました'),
+            content: isPremium
+                ? Text('プレミアムプランの1日の会話制限($limit回)に達しました。明日また会話できます。')
+                : Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text('無料プランの1日の会話制限($limit回)に達しました。'),
+                      const SizedBox(height: 16),
+                      const Text('プレミアムにアップグレードすると、1日3回まで会話できます。'),
+                    ],
+                  ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text('閉じる'),
+              ),
+              if (!isPremium)
+                ElevatedButton(
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                    // 設定画面に遷移してプレミアム案内を表示
+                    Navigator.of(context).pushReplacementNamed('/settings');
+                  },
+                  child: const Text('プレミアムにアップグレード'),
+                ),
+            ],
+          ),
+        );
+        
+        // 制限に達している場合は前の画面に戻る
+        Navigator.of(context).pop();
+        return false;
+      }
+    }
+    
+    // 制限に達していない場合はtrueを返す
+    return true;
+  }
+
   // 会話セッションを開始する
   Future<void> _startChatSession() async {
     if (_selectedMood == null) {
@@ -172,6 +228,15 @@ class _AIResponseScreenState extends State<AIResponseScreen> with SingleTickerPr
         const SnackBar(content: Text('気分が選択されていません。')),
       );
       return;
+    }
+    
+    // 会話制限をチェック（既存の会話の場合はスキップ）
+    if (_currentLogId == null) {
+      final canStartConversation = await _checkConversationLimits();
+      if (!canStartConversation) return;
+      
+      // 注意: 会話カウンターはここでは増やさない
+      // createLogメソッド内で既に増加されるため
     }
 
     setState(() {
@@ -184,13 +249,68 @@ class _AIResponseScreenState extends State<AIResponseScreen> with SingleTickerPr
     try {
       // チェックイン画面からの遷移の場合、ChatLogはすでに作成済み
       if (_currentLogId == null) {
-        // 何らかの理由でLogIDがない場合は新規作成
-        final newLog = await _chatLogService.createLog(
-          mood: _selectedMood!,
-          reflection: reflectionText.isNotEmpty ? reflectionText : null,
-          characterId: prefsService.selectedCharacterId,
-        );
-        _currentLogId = newLog.id;
+        try {
+          // 何らかの理由でLogIDがない場合は新規作成
+          final newLog = await _chatLogService.createLog(
+            mood: _selectedMood!,
+            reflection: reflectionText.isNotEmpty ? reflectionText : null,
+            characterId: prefsService.selectedCharacterId,
+          );
+          _currentLogId = newLog.id;
+        } catch (e) {
+          // 会話制限に達した場合などのエラー処理
+          if (mounted) {
+            setState(() {
+              _isLoading = false;
+            });
+            
+            // プレミアムかどうかを確認
+            final subscriptionService = Provider.of<SubscriptionService>(context, listen: false);
+            final isPremium = subscriptionService.isPremium;
+            final limit = isPremium 
+                ? SubscriptionService.premiumConversationLimit 
+                : SubscriptionService.freeConversationLimit;
+            
+            // エラーメッセージを表示
+            await showDialog(
+              context: context,
+              barrierDismissible: false,
+              builder: (context) => AlertDialog(
+                title: const Text('会話制限に達しました'),
+                content: isPremium
+                    ? Text('プレミアムプランの1日の会話制限($limit回)に達しました。明日また会話できます。')
+                    : Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text('無料プランの1日の会話制限($limit回)に達しました。'),
+                          const SizedBox(height: 16),
+                          const Text('プレミアムにアップグレードすると、1日う3回まで会話できます。'),
+                        ],
+                      ),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    child: const Text('閉じる'),
+                  ),
+                  if (!isPremium)
+                    ElevatedButton(
+                      onPressed: () {
+                        Navigator.of(context).pop();
+                        // 設定画面に遷移してプレミアム案内を表示
+                        Navigator.of(context).pushReplacementNamed('/settings');
+                      },
+                      child: const Text('プレミアムにアップグレード'),
+                    ),
+                ],
+              ),
+            );
+            
+            // 制限に達している場合は前の画面に戻る
+            Navigator.of(context).pop();
+            return; // 処理を中断
+          }
+          return; // 処理を中断
+        }
       }
 
       // GPTServiceのstartConversationを呼び出す
@@ -226,6 +346,35 @@ class _AIResponseScreenState extends State<AIResponseScreen> with SingleTickerPr
     // メッセージ送信中は重複送信を防止
     if (_isSending) return;
     
+    // 会話ターン数の制限をチェック
+    final subscriptionService = Provider.of<SubscriptionService>(context, listen: false);
+    final maxTurns = subscriptionService.isPremium
+        ? SubscriptionService.premiumConversationTurns
+        : SubscriptionService.freeConversationTurns;
+    
+    // 残り送信回数に応じた警告を表示
+    final remainingTurns = maxTurns - _currentConversationCount;
+    if (remainingTurns == 2) { // 次が最後から2番目のメッセージの場合 (例: 5/7送信済みで次が6回目)
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('次のメッセージを送信すると、残りの送信回数は1回となります。'),
+          duration: Duration(seconds: 3),
+          backgroundColor: Colors.orange,
+        ),
+      );
+    } else if (remainingTurns == 1) { // 次が最後のメッセージの場合 (例: 6/7送信済みで次が7回目)
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('次のメッセージが最後の送信となります。'),
+          duration: Duration(seconds: 3),
+          backgroundColor: Colors.orange,
+        ),
+      );
+    }
+    
+    // 最後のメッセージかどうかチェック
+    final bool isLastMessage = _currentConversationCount == maxTurns - 1;
+    
     setState(() {
       _isSending = true;
     });
@@ -252,10 +401,43 @@ class _AIResponseScreenState extends State<AIResponseScreen> with SingleTickerPr
         _scrollToBottom();
       }
 
-      // 5. 会話終了条件を確認し、終了していれば_endConversationを呼び出す
-      if (_shouldEndConversation && _currentLogId != null) {
-        // 自動終了の場合は_endConversationを呼び出す
-        await _endConversation();
+      // 5. 最後のメッセージだった場合、制限に達したことを通知して会話を終了
+      if (isLastMessage && _currentLogId != null) {
+        // 少し間を空けてからダイアログを表示
+        await Future.delayed(const Duration(milliseconds: 1000));
+        
+        // 制限に達したことをユーザーに通知
+        if (mounted) {
+          await showDialog(
+            context: context,
+            barrierDismissible: false,
+            builder: (context) => AlertDialog(
+              title: const Text('送信回数の制限に達しました'),
+              content: subscriptionService.isPremium
+                  ? const Text('プレミアムプランの送信回数制限（30回）に達しました。会話をまとめます。')
+                  : const Text('無料プランの送信回数制限（7回）に達しました。プレミアムプランにアップグレードすると、30回まで送信可能になります。'),
+              actions: [
+                TextButton(
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                    // 会話をまとめる
+                    _endConversation();
+                  },
+                  child: const Text('会話をまとめる'),
+                ),
+                if (!subscriptionService.isPremium)
+                  ElevatedButton(
+                    onPressed: () {
+                      Navigator.of(context).pop();
+                      // 設定画面に遷移してプレミアム案内を表示
+                      Navigator.of(context).pushReplacementNamed('/settings');
+                    },
+                    child: const Text('プレミアムにアップグレード'),
+                  ),
+              ],
+            ),
+          );
+        }
       }
     } catch (e) {
       // エラー処理
@@ -298,32 +480,63 @@ class _AIResponseScreenState extends State<AIResponseScreen> with SingleTickerPr
           icon: const Icon(Icons.close),
           onPressed: () => Navigator.of(context).pop(),
         ),
-        actions: [
-          // 会話画面のみ「今日の会話」を表示
-          Center(
-            child: Padding(
-              padding: const EdgeInsets.only(right: 16.0),
-              child: Row(
-                children: [
-                  Consumer<SubscriptionService>(
-                    builder: (context, subscriptionService, _) {
-                      final maxTurns = subscriptionService.isPremium
-                          ? SubscriptionService.premiumConversationTurns
-                          : SubscriptionService.freeConversationTurns;
-                      return Text(
-                        '今日の会話: $_currentConversationCount/$maxTurns',
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: AppTheme.secondaryTextColor,
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(40.0),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+            child: Consumer<SubscriptionService>(
+              builder: (context, subscriptionService, _) {
+                final isPremium = subscriptionService.isPremium;
+                final maxTurns = isPremium
+                    ? SubscriptionService.premiumConversationTurns
+                    : SubscriptionService.freeConversationTurns;
+                final maxConversations = isPremium
+                    ? SubscriptionService.premiumConversationLimit
+                    : SubscriptionService.freeConversationLimit;
+                
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          '送信回数: $_currentConversationCount/$maxTurns',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: AppTheme.secondaryTextColor,
+                            fontWeight: _currentConversationCount > maxTurns * 0.7 ? FontWeight.bold : FontWeight.normal,
+                          ),
                         ),
-                      );
-                    },
-                  ),
-                ],
-              ),
+                        Text(
+                          '今日の会話: ${subscriptionService.todayConversationCount}/$maxConversations',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: AppTheme.secondaryTextColor,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 4),
+                    // ターン数のプログレスバー
+                    LinearProgressIndicator(
+                      value: _currentConversationCount / maxTurns,
+                      backgroundColor: Colors.grey[300],
+                      valueColor: AlwaysStoppedAnimation<Color>(
+                        _currentConversationCount > maxTurns * 0.8
+                            ? Colors.red
+                            : _currentConversationCount > maxTurns * 0.5
+                                ? Colors.orange
+                                : AppTheme.primaryColor,
+                      ),
+                    ),
+                  ],
+                );
+              },
             ),
           ),
-        ],
+        ),
+        actions: [],
       ),
       body: Column(
         children: [

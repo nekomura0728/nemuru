@@ -36,7 +36,9 @@ class PurchaseService extends ChangeNotifier {
   List<ProductDetails> get products => _products;
   bool get isPurchasePending => _isPurchasePending;
   String? get errorMessage => _errorMessage;
-  bool get isAvailable => _inAppPurchase.isAvailable;
+  // isAvailableはFuture<bool>を返すため、同期的に使用できません
+  // 代わりにメソッドとして提供
+  Future<bool> checkAvailability() => _inAppPurchase.isAvailable();
   
   PurchaseService(this._preferencesService, this._subscriptionService) {
     _initializePurchase();
@@ -199,7 +201,7 @@ class PurchaseService extends ChangeNotifier {
       print('Supabase Functionの呼び出しエラー: $e');
       
       // エラーが発生した場合、デバッグモードでは仮の検証結果を返す
-      if (kDebugMode) {
+      if (const bool.fromEnvironment('dart.vm.product') == false) {
         return {
           'success': true,
           'isValid': true,
