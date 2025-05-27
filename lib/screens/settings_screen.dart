@@ -102,6 +102,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
           // About
           _buildSectionHeader(context, '情報'),
           ListTile(
+            title: const Text('ヘルプとよくある質問'),
+            leading: const Icon(Icons.help_outline),
+            trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+            onTap: () {
+              Navigator.of(context).pushNamed('/help');
+            },
+          ),
+          ListTile(
             title: const Text('プライバシーポリシー'),
             trailing: const Icon(Icons.arrow_forward_ios, size: 16),
             onTap: () {

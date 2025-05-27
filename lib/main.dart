@@ -6,6 +6,7 @@ import 'package:nemuru/screens/check_in_screen.dart';
 import 'package:nemuru/screens/ai_response_screen.dart';
 import 'package:nemuru/screens/log_screen.dart';
 import 'package:nemuru/screens/settings_screen.dart';
+import 'package:nemuru/screens/help_screen.dart';
 import 'package:nemuru/theme/app_theme.dart';
 import 'package:nemuru/services/notification_service.dart';
 import 'package:nemuru/services/preferences_service.dart';
@@ -92,6 +93,7 @@ class NemuruApp extends StatelessWidget {
         '/check-in': (context) => const CheckInScreen(),
         '/log': (context) => const LogScreen(),
         '/settings': (context) => const SettingsScreen(),
+        '/help': (context) => const HelpScreen(),
       },
       // AIResponseScreenは引数を受け取るため、onGenerateRouteで処理
       onGenerateRoute: (settings) {

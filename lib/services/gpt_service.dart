@@ -1,9 +1,12 @@
 import 'dart:convert';
+import 'dart:async';
 import 'package:http/http.dart' as http;
 import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:nemuru/models/character.dart';
 import 'package:nemuru/models/message.dart';
 import 'package:nemuru/services/preferences_service.dart';
+import 'package:nemuru/services/error_handling_service.dart';
 
 class GPTService {
   // バックエンドAPIのエンドポイント（Supabase Edge Functions）
@@ -47,35 +50,46 @@ class GPTService {
   }
 
   // AIの応答を生成し、会話履歴に追加する（非同期処理）
-  Future<String> generateAndAddAIResponse({String? initialContextOverride}) async {
-    // APIに渡す現在のユーザー入力。通常は履歴の最後のユーザーメッセージ。
-    // initialContextOverrideはstartConversationの初回呼び出し時に使用される想定。
+  Future<String> generateAndAddAIResponse({String? initialContextOverride, BuildContext? context}) async {
+    // APIに渡す現在のユーザー入力を準備
     String contextForAPI;
     if (initialContextOverride != null) {
       contextForAPI = initialContextOverride;
     } else if (_conversationHistory.isNotEmpty && _conversationHistory.last.isUser) {
       contextForAPI = _conversationHistory.last.content;
     } else {
-      // 履歴が空か、最後がユーザーメッセージでない場合（通常は発生しないはず）
-      // startConversationでmoodのみで開始する場合など
-      contextForAPI = ''; // または適切なデフォルトの問いかけを促す入力
+      // 履歴が空か、最後がユーザーメッセージでない場合
+      contextForAPI = ''; 
     }
 
+    // エラーハンドリングを改善したAPI呼び出し
     String aiResponse;
     try {
-      aiResponse = await _generateResponseFromAPI(contextForAPI);
+      // BuildContextを渡してエラーダイアログを表示できるようにする
+      aiResponse = await _generateResponseFromAPI(contextForAPI, context: context);
     } catch (e) {
       print('Error generating response from backend: $e');
-      // Consider a more robust error handling or fallback if backend communication fails
-      aiResponse = 'AIの応答取得中にエラーが発生しました。しばらくしてからもう一度お試しください。';
+      
+      // エラータイプに基づいたメッセージを表示
+      if (context != null) {
+        final errorHandlingService = ErrorHandlingService();
+        final errorType = errorHandlingService.getErrorTypeFromException(e);
+        
+        // エラーダイアログはすでに_generateResponseFromAPI内で表示されている可能性がある
+        // ここではメッセージのみ取得
+        aiResponse = errorHandlingService.getErrorMessage(errorType);
+      } else {
+        // コンテキストがない場合はデフォルトメッセージ
+        aiResponse = 'AIの応答取得中にエラーが発生しました。しばらくしてからもう一度お試しください。';
+      }
     }
     
+    // 応答を会話履歴に追加
     final aiMessage = Message(content: aiResponse, isUser: false);
     _conversationHistory.add(aiMessage);
     
-    // 初回の気分選択と質問応答が完了したかどうかの判定のみ行う
+    // 初回の気分選択と質問応答が完了したかどうかの判定
     if (!_isInitialExchangeComplete && _conversationHistory.length >= 2) {
-      // 初回の気分選択と質問応答が完了したことをマーク
       _isInitialExchangeComplete = true;
     }
     
@@ -83,7 +97,7 @@ class GPTService {
   }
 
   // 会話を開始する
-  Future<String> startConversation(String initialReflection, String mood) async {
+  Future<String> startConversation(String initialReflection, String mood, {BuildContext? context}) async {
     _conversationHistory.clear();
     _messageCount = 0; // Reset count
     _isInitialExchangeComplete = false;
@@ -96,13 +110,15 @@ class GPTService {
       _messageCount = 1; // First user message
     }
     
-    // AIの最初の応答を生成。initialReflectionをAPIへのコンテキストとして渡す。
-    // _buildMessages内で _messageCount や _currentMood を見て初回プロンプトを調整する。
-    return await generateAndAddAIResponse(initialContextOverride: initialReflection);
+    // AIの最初の応答を生成。BuildContextを渡してエラーハンドリングを改善
+    return await generateAndAddAIResponse(
+      initialContextOverride: initialReflection,
+      context: context,
+    );
   }
   
   // GPT-4oにメッセージを送信して応答を取得する内部メソッド
-  Future<String> _generateResponseFromAPI(String userInput) async {
+  Future<String> _generateResponseFromAPI(String userInput, {BuildContext? context}) async {
     // デバッグ用に強制的にモック応答を返す場合はここをtrueにする
     bool useDebugMockResponse = false;
     if (useDebugMockResponse && kDebugMode) {
@@ -111,40 +127,88 @@ class GPTService {
     }
 
     print('Calling backend API for chat completion...');
+    
+    // タイムアウト設定
+    const timeoutDuration = Duration(seconds: 30);
 
     try {
+      // タイムアウト付きのAPIリクエスト
       final response = await http.post(
-        Uri.parse(_chatCompletionsBaseUrl), // Use the new backend URL
+        Uri.parse(_chatCompletionsBaseUrl),
         headers: {
           'Content-Type': 'application/json',
-          // Authorization header is removed; backend will handle API key
         },
         body: jsonEncode({
-          'model': 'gpt-4o', // Backend might override or use this
+          'model': 'gpt-4o',
           'messages': _buildMessages(userInput),
           'max_tokens': 200, 
           'temperature': 0.7,
-          // Potentially pass other relevant info to backend if needed
-          // e.g., 'userId': 'some_user_id', 'mood': _currentMood
         }),
-      );
+      ).timeout(timeoutDuration, onTimeout: () {
+        // タイムアウトの場合
+        throw TimeoutException('応答の取得がタイムアウトしました。ネットワーク環境を確認してください。');
+      });
 
       if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        return data['choices'][0]['message']['content'];
+        try {
+          final data = jsonDecode(response.body);
+          return data['choices'][0]['message']['content'];
+        } catch (e) {
+          print('JSON parsing error: $e');
+          throw Exception('レスポンスの解析に失敗しました。');
+        }
       } else {
-        // Backend APIエラーの詳細をログに出力
+        // ステータスコードに基づくエラータイプの判定
+        final errorHandlingService = ErrorHandlingService();
+        final errorType = errorHandlingService.getErrorTypeFromStatusCode(response.statusCode);
+        
         print('Backend API error: ${response.statusCode}, ${response.body}');
-        throw Exception('Failed to generate response from backend: ${response.statusCode} - ${response.body}');
+        throw Exception('${errorHandlingService.getErrorMessage(errorType)} (ステータスコード: ${response.statusCode})');
       }
+    } on TimeoutException catch (e) {
+      print('API request timed out: $e');
+      if (context != null) {
+        ErrorHandlingService().showErrorDialog(
+          context, 
+          ErrorHandlingService.ErrorType.timeout,
+          onRetry: () async {
+            // 再試行ロジックを実装する場所
+          },
+        );
+      }
+      return '応答の取得に時間がかかっています。ネットワーク環境を確認して、もう一度お試しください。';
+    } on http.ClientException catch (e) {
+      print('HTTP client exception: $e');
+      if (context != null) {
+        ErrorHandlingService().showErrorDialog(
+          context, 
+          ErrorHandlingService.ErrorType.network,
+          onRetry: () async {
+            // 再試行ロジックを実装する場所
+          },
+        );
+      }
+      return 'ネットワークに接続できません。インターネット接続を確認して、もう一度お試しください。';
     } catch (e) {
-      // Handle network errors or other exceptions during backend communication
       print('Exception during backend API call: $e');
-      if (kDebugMode && useDebugMockResponse) { // Fallback to mock only if debug mock is globally enabled
+      if (kDebugMode && useDebugMockResponse) {
         print('デバッグ用にモック応答を返します (exception case)');
         return _getMockResponse(_currentMood, _messageCount);
       }
-      rethrow;
+      
+      if (context != null) {
+        final errorHandlingService = ErrorHandlingService();
+        final errorType = errorHandlingService.getErrorTypeFromException(e);
+        errorHandlingService.showErrorDialog(
+          context, 
+          errorType,
+          onRetry: () async {
+            // 再試行ロジックを実装する場所
+          },
+        );
+      }
+      
+      return 'エラーが発生しました。しばらくしてからもう一度お試しください。';
     }
   }
 
