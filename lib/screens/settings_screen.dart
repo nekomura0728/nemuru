@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:nemuru/services/preferences_service.dart';
 import 'package:nemuru/services/subscription_service.dart';
 import 'package:nemuru/services/purchase_service.dart';
+import 'package:nemuru/services/accessibility_service.dart';
 import 'package:flutter/foundation.dart'; // kDebugModeのため
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -83,6 +84,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
           const Divider(),
           
+          // アクセシビリティ設定
+          _buildSectionHeader(context, 'アクセシビリティ設定'),
+          _buildFontSizeSelector(context),
+          const Divider(),
+          
           // キャラクター設定
           _buildSectionHeader(context, 'キャラクター設定'),
           _buildCharacterSelector(context, preferencesService),
@@ -159,6 +165,50 @@ class _SettingsScreenState extends State<SettingsScreen> {
           fontWeight: FontWeight.bold,
           color: AppTheme.primaryColor,
         ),
+      ),
+    );
+  }
+
+  Widget _buildFontSizeSelector(BuildContext context) {
+    final accessibilityService = Provider.of<AccessibilityService>(context);
+    
+    return Padding(
+      padding: const EdgeInsets.all(16.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'フォントサイズ',
+            style: Theme.of(context).textTheme.titleMedium,
+          ),
+          const SizedBox(height: 16),
+          Text(
+            'プレビュー: このテキストでフォントサイズを確認できます',
+            style: Theme.of(context).textTheme.bodyMedium,
+          ),
+          const SizedBox(height: 16),
+          Wrap(
+            spacing: 8,
+            children: AccessibilityService.fontScaleOptions.map((option) {
+              final isSelected = accessibilityService.fontScaleFactor == option.scale;
+              return ChoiceChip(
+                label: Text(option.label),
+                selected: isSelected,
+                onSelected: (selected) {
+                  if (selected) {
+                    accessibilityService.setFontScaleFactor(option.scale);
+                  }
+                },
+                selectedColor: AppTheme.primaryColor.withOpacity(0.3),
+                backgroundColor: Colors.grey[200],
+                labelStyle: TextStyle(
+                  color: isSelected ? AppTheme.primaryColor : Colors.black87,
+                  fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                ),
+              );
+            }).toList(),
+          ),
+        ],
       ),
     );
   }
