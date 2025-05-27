@@ -522,7 +522,7 @@ class _CheckInScreenState extends State<CheckInScreen> with SingleTickerProvider
                 '哀': '悲しい気持ちを選びました。その悲しみを共有してみませんか。',
                 '楽': '心地よい気持ちを選びました。何があなたに安らぎを与えていますか。',
                 '疲': '疲れた気持ちを選びました。今日は大変な一日だったのですね。',
-                '焼': '不安な気持ちを選びました。あなたの心配事を聞かせてください。',
+                '焦': '不安な気持ちを選びました。あなたの心配事を聞かせてください。',
               };
               
               ScaffoldMessenger.of(context).showSnackBar(

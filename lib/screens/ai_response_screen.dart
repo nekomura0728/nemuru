@@ -385,7 +385,7 @@ class _AIResponseScreenState extends State<AIResponseScreen> with SingleTickerPr
                     children: [
                       Text('無料プランの1日の会話制限($limit回)に達しました。'),
                       const SizedBox(height: 16),
-                      const Text('プレミアムにアップグレードすると、1日3回まで会話できます。'),
+                      const Text('プレミアムにアップグレードすると、1日30回まで会話できます。'),
                     ],
                   ),
             actions: [
@@ -479,7 +479,7 @@ class _AIResponseScreenState extends State<AIResponseScreen> with SingleTickerPr
                         children: [
                           Text('無料プランの1日の会話制限($limit回)に達しました。'),
                           const SizedBox(height: 16),
-                          const Text('プレミアムにアップグレードすると、1日う3回まで会話できます。'),
+                          const Text('プレミアムにアップグレードすると、1日30回まで会話できます。'),
                         ],
                       ),
                 actions: [

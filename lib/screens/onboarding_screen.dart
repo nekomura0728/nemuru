@@ -24,7 +24,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   }
 
   void _nextPage() {
-    if (_currentPage < 1) { // ページ数を2ページに変更
+    if (_currentPage < 2) { // ページ数を3ページに変更
       _pageController.nextPage(
         duration: const Duration(milliseconds: 300),
         curve: Curves.easeInOut,
@@ -59,6 +59,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 },
                 children: [
                   _buildWelcomePage(),
+                  _buildTutorialPage(), // チュートリアルページ
                   _buildCharacterSelectionPage(), // キャラクター選択ページ
                 ],
               ),
@@ -129,7 +130,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           ),
           const SizedBox(height: 16),
           Text(
-            'NEMURUは、眠りにつく前に一日を振り返り、心を落ち着けるお手伝いをします。',
+            'NEMURUは眠りにつく前のひとときに、一日を振り返り心を落ち着けるお手伝いをするアプリです。',
             style: Theme.of(context).textTheme.bodyMedium,
             textAlign: TextAlign.center,
           ),
@@ -146,6 +147,118 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           ),
           const Spacer(),
         ],
+      ),
+    );
+  }
+
+  Widget _buildTutorialPage() {
+    return Padding(
+      padding: const EdgeInsets.all(24.0),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const SizedBox(height: 20),
+          Text(
+            'NEMURUの使い方',
+            style: AppTheme.handwrittenStyle.copyWith(
+              fontSize: 32,
+              fontWeight: FontWeight.bold,
+              color: Theme.of(context).brightness == Brightness.dark ? AppTheme.darkPrimaryColor : AppTheme.primaryColor,
+            ),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 40),
+          Expanded(
+            child: SingleChildScrollView(
+              child: Column(
+                children: [
+                  _buildTutorialStep(
+                    icon: Icons.sentiment_satisfied_alt,
+                    title: '1. 今日の気分を選択',
+                    description: 'まずは今日の気分を5段階から選んでください。\n気分に合わせて会話が調整されます。',
+                  ),
+                  const SizedBox(height: 24),
+                  _buildTutorialStep(
+                    icon: Icons.edit_note,
+                    title: '2. 一日を振り返る',
+                    description: '今日起きた出来事や感じたことを\n自由に入力してください。どんな些細なことでも大丈夫です。',
+                  ),
+                  const SizedBox(height: 24),
+                  _buildTutorialStep(
+                    icon: Icons.chat_bubble_outline,
+                    title: '3. キャラクターと対話',
+                    description: '選んだキャラクターがあなたの気持ちに寄り添い、\n心安らぐ会話をお手伝いします。',
+                  ),
+                  const SizedBox(height: 24),
+                  _buildTutorialStep(
+                    icon: Icons.book_outlined,
+                    title: '4. 振り返りの記録',
+                    description: '会話の内容は自動で記録され、\n過去の心の軌跡として振り返ることができます。',
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTutorialStep({
+    required IconData icon,
+    required String title,
+    required String description,
+  }) {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    final primaryColor = isDarkMode ? AppTheme.darkPrimaryColor : AppTheme.primaryColor;
+    final cardColor = isDarkMode ? AppTheme.darkCardColor : AppTheme.cardColor;
+    
+    return Card(
+      elevation: 2,
+      color: cardColor,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(20.0),
+        child: Row(
+          children: [
+            Container(
+              width: 60,
+              height: 60,
+              decoration: BoxDecoration(
+                color: primaryColor.withOpacity(0.1),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                icon,
+                size: 30,
+                color: primaryColor,
+              ),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                      color: primaryColor,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    description,
+                    style: Theme.of(context).textTheme.bodyMedium,
+                    textAlign: TextAlign.left,
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -297,7 +410,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: List.generate(
-          2, // 2ページに変更
+          3, // 3ページに変更
           (index) => AnimatedContainer(
             duration: const Duration(milliseconds: 300),
             width: _currentPage == index ? 20 : 10,
@@ -331,7 +444,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       padding: const EdgeInsets.all(24.0),
       child: Column(
         children: [
-          if (_currentPage == 0) // 最初のページでは次へボタンを表示
+          if (_currentPage < 2) // 最初と2番目のページでは次へボタンを表示
             ElevatedButton(
               onPressed: _nextPage,
               style: ElevatedButton.styleFrom(
@@ -346,7 +459,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               ),
               child: const Text('次へ', style: TextStyle(fontSize: 16)),
             ),
-          if (_currentPage == 1) // 最後のページでは開始ボタンを表示
+          if (_currentPage == 2) // 最後のページでは開始ボタンを表示
             ElevatedButton(
               onPressed: _completeOnboarding,
               style: ElevatedButton.styleFrom(
