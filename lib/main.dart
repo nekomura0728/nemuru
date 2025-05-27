@@ -12,6 +12,7 @@ import 'package:nemuru/services/preferences_service.dart';
 import 'package:nemuru/services/subscription_service.dart';
 import 'package:nemuru/services/purchase_service.dart';
 import 'package:nemuru/services/chat_log_service.dart';
+import 'package:nemuru/services/accessibility_service.dart';
 import 'package:intl/intl.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -51,6 +52,10 @@ void main() async {
   // チャットログサービスを初期化
   final chatLogService = ChatLogService(subscriptionService);
   
+  // アクセシビリティサービスを初期化
+  final accessibilityService = AccessibilityService();
+  await accessibilityService.init();
+  
   runApp(
     MultiProvider(
       providers: [
@@ -59,6 +64,7 @@ void main() async {
         ChangeNotifierProvider(create: (_) => subscriptionService),
         ChangeNotifierProvider(create: (_) => purchaseService),
         ChangeNotifierProvider(create: (_) => chatLogService),
+        ChangeNotifierProvider(create: (_) => accessibilityService),
       ],
       child: const NemuruApp(),
     ),
@@ -71,12 +77,13 @@ class NemuruApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final preferencesService = Provider.of<PreferencesService>(context);
+    final accessibilityService = Provider.of<AccessibilityService>(context);
     final bool showOnboarding = !preferencesService.onboardingCompleted;
     
     return MaterialApp(
       title: 'NEMURU',
-      theme: AppTheme.lightTheme,
-      darkTheme: AppTheme.darkTheme,
+      theme: AppTheme.lightThemeWithScale(fontScale: accessibilityService.fontScaleFactor),
+      darkTheme: AppTheme.darkThemeWithScale(fontScale: accessibilityService.fontScaleFactor),
       themeMode: preferencesService.isDarkMode ? ThemeMode.dark : ThemeMode.light,
       debugShowCheckedModeBanner: false,
       initialRoute: showOnboarding ? '/onboarding' : '/check-in',
