@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 
 /// チャットログを管理するモデル
 class ChatLog {
@@ -7,6 +6,8 @@ class ChatLog {
   final String mood;
   final String? reflection; // Made nullable as it's no longer from a dedicated screen
   final String? summary; // New field for conversation summary
+  // adviceフィールドはデータベースに存在しないため、一時的にコメントアウト
+  // final String? advice; // AIからのアドバイス
   final int characterId;
   final String deviceId; // デバイス固有のID
 
@@ -16,6 +17,7 @@ class ChatLog {
     required this.mood,
     this.reflection, // Made nullable
     this.summary,
+    // this.advice, // AIからのアドバイス
     required this.characterId,
     required this.deviceId,
   });
@@ -28,6 +30,7 @@ class ChatLog {
       mood: json['mood'] as String,
       reflection: json['reflection'] as String?,
       summary: json['summary'] as String?,
+      // advice: json['advice'] as String?,
       characterId: json['character_id'] as int,
       deviceId: json['device_id'] as String,
     );
@@ -41,6 +44,7 @@ class ChatLog {
       'mood': mood,
       'reflection': reflection, // Will be null if not provided
       'summary': summary,
+      // 'advice': advice,
       'character_id': characterId,
       'device_id': deviceId,
     };

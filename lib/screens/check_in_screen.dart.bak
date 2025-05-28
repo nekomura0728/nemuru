@@ -18,15 +18,13 @@ class CheckInScreen extends StatefulWidget {
 class _CheckInScreenState extends State<CheckInScreen> with SingleTickerProviderStateMixin {
   final TextEditingController _textController = TextEditingController();
   String? _selectedMood;
-  // 気分アイコンのマッピング
-  // アイコンはカスタム画像を使用するように変更
-  final Map<String, int> _moodIconIds = {
-    '喜': 13, // 喜びアイコンは13.png
-    '怒': 14, // 怒りアイコンは14.png
-    '哀': 15, // 哀しみアイコンは15.png
-    '楽': 16, // 楽しさアイコンは16.png
-    '疲': 17, // 疲れアイコンは17.png
-    '焦': 18, // 焦りアイコンは18.png
+  final Map<String, IconData> _moodIcons = {
+    '喜': Icons.sentiment_very_satisfied_rounded,
+    '怒': Icons.sentiment_very_dissatisfied_rounded,
+    '哀': Icons.sentiment_dissatisfied_rounded,
+    '楽': Icons.sentiment_satisfied_alt_rounded,
+    '疲': Icons.bedtime_rounded,
+    '焦': Icons.running_with_errors_rounded,
   };
   
   final Map<String, Color> _moodColors = {
@@ -98,6 +96,8 @@ class _CheckInScreenState extends State<CheckInScreen> with SingleTickerProvider
     final reflection = _textController.text.trim();
     final mood = _selectedMood!;
     
+    // デバッグ用に値を表示
+    print('Debug - Creating log and sending to AI response screen: characterId=$characterId, mood=$mood, reflection=$reflection');
 
     // ChatLogを先に作成
     final newLog = await chatLogService.createLog(
@@ -106,15 +106,12 @@ class _CheckInScreenState extends State<CheckInScreen> with SingleTickerProvider
       characterId: characterId,
     );
     
-    // AIレスポンススクリーンにChatLogオブジェクトを渡して遷移
-    // 必ず遷移するように、pushReplacementNamedを使用
-    Navigator.of(context).pushReplacementNamed(
+    // AIResponseScreenにChatLogオブジェクトを渡して遷移
+    Navigator.of(context).pushNamed(
       '/ai-response',
       arguments: {
         'chatLog': newLog, // 作成したログを渡す
-        'characterId': characterId,
-        'mood': mood,
-        'reflection': reflection,
+        // characterId, mood, initialReflection は newLog に含まれるため、個別には不要
       },
     );
 
@@ -281,39 +278,95 @@ class _CheckInScreenState extends State<CheckInScreen> with SingleTickerProvider
                   },
                 ),
               ),
-              // 全体レイアウトを変更してボタンを下部に配置
-              Column(
-                children: [
-                  // メインコンテンツ部分（スクロール可能）
-                  Expanded(
-                    child: SingleChildScrollView(
-                      child: Padding(
-                        padding: const EdgeInsets.all(16.0),
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                      _buildMoodSelection(),
-                      const SizedBox(height: 24),
-                      // TextField Container
-                      Container(
-                        padding: const EdgeInsets.all(4),
-                        decoration: BoxDecoration(
-                          color: Theme.of(context).brightness == Brightness.dark
-                              ? AppTheme.darkCardColor.withValues(alpha: 0.8)
-                              : Theme.of(context).cardColor.withValues(alpha: 0.9),
-                          borderRadius: BorderRadius.circular(18),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Theme.of(context).brightness == Brightness.dark
-                                  ? Colors.black.withValues(alpha: 0.25)
-                                  : Colors.grey.withValues(alpha: 0.15),
-                              blurRadius: 12,
-                              offset: const Offset(0, 4),
-                            ),
-                          ],
+              // メインコンテンツ
+              SingleChildScrollView(
+                child: Padding(
+                  padding: const EdgeInsets.all(24.0),
+                  child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Date display with night theme
+                Container(
+                  padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 24),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).brightness == Brightness.dark 
+                        ? AppTheme.darkPrimaryColor.withOpacity(0.15) 
+                        : AppTheme.primaryColor.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.nightlight_round,
+                        size: 20,
+                        color: Theme.of(context).brightness == Brightness.dark 
+                            ? AppTheme.darkSecondaryTextColor 
+                            : AppTheme.secondaryTextColor,
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        formattedDate,
+                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                          color: Theme.of(context).brightness == Brightness.dark 
+                              ? AppTheme.darkSecondaryTextColor 
+                              : AppTheme.secondaryTextColor,
+                          fontWeight: FontWeight.w500,
                         ),
-                        child: TextField(
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 40),
+                
+                // Mood selection title with stars
+                Center(
+                  child: Column(
+                    children: [
+                      Text(
+                        '今夕の気持ちを教えてください',
+                        style: AppTheme.handwrittenStyle.copyWith(
+                          fontSize: 28,
+                          fontWeight: FontWeight.bold,
+                          color: Theme.of(context).brightness == Brightness.dark 
+                              ? AppTheme.darkPrimaryColor 
+                              : AppTheme.primaryColor,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        '眼を閉じて、心の声に耳を澄ませてみましょう',
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: Theme.of(context).brightness == Brightness.dark 
+                              ? AppTheme.darkSecondaryTextColor 
+                              : AppTheme.secondaryTextColor,
+                          fontStyle: FontStyle.italic,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 24),
+                
+                // Mood selection
+                _buildMoodSelection(),
+                const SizedBox(height: 32),
+                
+                // Text input with night theme
+                Container(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(16),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Theme.of(context).brightness == Brightness.dark
+                            ? Colors.black.withOpacity(0.2)
+                            : Colors.grey.withOpacity(0.1),
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: TextField(
                     controller: _textController,
                     maxLines: 5,
                     maxLength: 300,
@@ -322,8 +375,8 @@ class _CheckInScreenState extends State<CheckInScreen> with SingleTickerProvider
                       hintText: '今夕の出来事や、心に浮かんだ思いを、ありのままに…',
                       hintStyle: TextStyle(
                         color: Theme.of(context).brightness == Brightness.dark
-                            ? AppTheme.darkSecondaryTextColor.withValues(alpha: 0.7)
-                            : AppTheme.secondaryTextColor.withValues(alpha: 0.7),
+                            ? AppTheme.darkSecondaryTextColor.withOpacity(0.7)
+                            : AppTheme.secondaryTextColor.withOpacity(0.7),
                         fontStyle: FontStyle.italic,
                       ),
                       filled: true,
@@ -334,16 +387,16 @@ class _CheckInScreenState extends State<CheckInScreen> with SingleTickerProvider
                         borderRadius: BorderRadius.circular(16),
                         borderSide: BorderSide(
                           color: Theme.of(context).brightness == Brightness.dark
-                              ? AppTheme.darkPrimaryColor.withValues(alpha: 0.5)
-                              : AppTheme.primaryColor.withValues(alpha: 0.5),
+                              ? AppTheme.darkPrimaryColor.withOpacity(0.5)
+                              : AppTheme.primaryColor.withOpacity(0.5),
                         ),
                       ),
                       enabledBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(16),
                         borderSide: BorderSide(
                           color: Theme.of(context).brightness == Brightness.dark
-                              ? AppTheme.darkPrimaryColor.withValues(alpha: 0.3)
-                              : AppTheme.primaryColor.withValues(alpha: 0.3),
+                              ? AppTheme.darkPrimaryColor.withOpacity(0.3)
+                              : AppTheme.primaryColor.withOpacity(0.3),
                         ),
                       ),
                       focusedBorder: OutlineInputBorder(
@@ -359,67 +412,60 @@ class _CheckInScreenState extends State<CheckInScreen> with SingleTickerProvider
                     ),
                   ),
                 ),
-                          ],
-                        ),
-                      ),
+                const SizedBox(height: 40),
+                
+                // Submit button with night theme
+                ElevatedButton.icon(
+                  onPressed: _submitCheckIn,
+                  icon: Icon(
+                    Icons.send_rounded,
+                    color: Colors.white,
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Theme.of(context).brightness == Brightness.dark
+                        ? AppTheme.darkPrimaryColor
+                        : AppTheme.primaryColor,
+                    foregroundColor: Colors.white,
+                    minimumSize: const Size(double.infinity, 56),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(28),
+                    ),
+                    elevation: 4,
+                    shadowColor: Theme.of(context).brightness == Brightness.dark
+                        ? AppTheme.darkPrimaryColor.withOpacity(0.5)
+                        : AppTheme.primaryColor.withOpacity(0.5),
+                  ),
+                  label: const Text('心を届ける', style: TextStyle(fontSize: 16)),
+                ),
+                
+                // 過去のログを見るボタン
+                const SizedBox(height: 16),
+                OutlinedButton.icon(
+                  icon: Icon(
+                    Icons.auto_stories_rounded,
+                    color: Theme.of(context).brightness == Brightness.dark
+                        ? AppTheme.darkAccentColor
+                        : AppTheme.accentColor,
+                  ),
+                  label: const Text('これまでの心の軌跡を振り返る'),
+                  onPressed: () => Navigator.of(context).pushNamed('/log'),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: Theme.of(context).brightness == Brightness.dark
+                        ? AppTheme.darkAccentColor
+                        : AppTheme.accentColor,
+                    minimumSize: const Size(double.infinity, 56),
+                    side: BorderSide(
+                      color: Theme.of(context).brightness == Brightness.dark
+                          ? AppTheme.darkAccentColor
+                          : AppTheme.accentColor,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(28),
                     ),
                   ),
-                  
-                  // ボタン部分を下部に配置
-                  Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        // Submit button with night theme
-                        ElevatedButton.icon(
-                          onPressed: _submitCheckIn,
-                          icon: const Icon(Icons.send_rounded), // color will be taken from foregroundColor
-                          label: Text('心を届ける', style: Theme.of(context).textTheme.labelLarge?.copyWith(fontWeight: FontWeight.bold)),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Theme.of(context).brightness == Brightness.dark
-                                ? AppTheme.darkPrimaryColor
-                                : AppTheme.primaryColor,
-                            foregroundColor: Colors.white, // Sets icon and text color
-                            minimumSize: const Size(double.infinity, 56),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(28),
-                            ),
-                            elevation: 5, // Standard elevation
-                            shadowColor: Theme.of(context).brightness == Brightness.dark
-                                ? Colors.black.withValues(alpha: 0.3)
-                                : Colors.black.withValues(alpha: 0.2),
-                          ),
-                        ),
-                        
-                        // 過去のログを見るボタン
-                        const SizedBox(height: 16),
-                        OutlinedButton.icon(
-                          icon: const Icon(Icons.auto_stories_rounded),
-                          label: const Text('これまでの心の軌跡を振り返る'),
-                          onPressed: () => Navigator.of(context).pushNamed('/log'),
-                          style: OutlinedButton.styleFrom(
-                            foregroundColor: Theme.of(context).brightness == Brightness.dark
-                                ? AppTheme.darkAccentColor
-                                : AppTheme.accentColor, // Sets icon and text color
-                            minimumSize: const Size(double.infinity, 56),
-                            side: BorderSide(
-                              color: Theme.of(context).brightness == Brightness.dark
-                                  ? AppTheme.darkAccentColor
-                                  : AppTheme.accentColor,
-                              width: 1.5, // Slightly thicker border
-                            ),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(28),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ],
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -435,13 +481,13 @@ class _CheckInScreenState extends State<CheckInScreen> with SingleTickerProvider
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: isDarkMode 
-            ? AppTheme.darkBackgroundColor.withValues(alpha: 0.3) 
-            : AppTheme.backgroundColor.withValues(alpha: 0.3),
+            ? AppTheme.darkBackgroundColor.withOpacity(0.3) 
+            : AppTheme.backgroundColor.withOpacity(0.3),
         borderRadius: BorderRadius.circular(24),
         border: Border.all(
           color: isDarkMode 
-              ? AppTheme.darkPrimaryColor.withValues(alpha: 0.1) 
-              : AppTheme.primaryColor.withValues(alpha: 0.1),
+              ? AppTheme.darkPrimaryColor.withOpacity(0.1) 
+              : AppTheme.primaryColor.withOpacity(0.1),
           width: 1,
         ),
       ),
@@ -454,10 +500,10 @@ class _CheckInScreenState extends State<CheckInScreen> with SingleTickerProvider
           crossAxisSpacing: 16,
           mainAxisSpacing: 16,
         ),
-        itemCount: _moodIconIds.length,
+        itemCount: _moodIcons.length,
         itemBuilder: (context, index) {
-          final mood = _moodIconIds.keys.elementAt(index);
-          final iconId = _moodIconIds[mood];
+          final mood = _moodIcons.keys.elementAt(index);
+          final icon = _moodIcons[mood];
           final color = _moodColors[mood];
           final isSelected = _selectedMood == mood;
           
@@ -486,7 +532,7 @@ class _CheckInScreenState extends State<CheckInScreen> with SingleTickerProvider
                   behavior: SnackBarBehavior.floating,
                   backgroundColor: isDarkMode 
                       ? AppTheme.darkCardColor 
-                      : AppTheme.primaryColor.withValues(alpha: 0.9),
+                      : AppTheme.primaryColor.withOpacity(0.9),
                 ),
               );
             },
@@ -495,22 +541,22 @@ class _CheckInScreenState extends State<CheckInScreen> with SingleTickerProvider
               decoration: BoxDecoration(
                 color: isSelected 
                     ? (isDarkMode 
-                        ? color?.withValues(alpha: 0.3) 
-                        : color?.withValues(alpha: 0.2))
+                        ? color?.withOpacity(0.3) 
+                        : color?.withOpacity(0.2))
                     : cardColor,
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(
                   color: isSelected 
                       ? color ?? (isDarkMode ? AppTheme.darkPrimaryColor : AppTheme.primaryColor)
                       : (isDarkMode 
-                          ? AppTheme.darkPrimaryColor.withValues(alpha: 0.2) 
-                          : AppTheme.primaryColor.withValues(alpha: 0.2)),
+                          ? AppTheme.darkPrimaryColor.withOpacity(0.2) 
+                          : AppTheme.primaryColor.withOpacity(0.2)),
                   width: isSelected ? 2 : 1,
                 ),
                 boxShadow: isSelected
                     ? [
                         BoxShadow(
-                          color: (color ?? (isDarkMode ? AppTheme.darkPrimaryColor : AppTheme.primaryColor)).withValues(alpha: isDarkMode ? 0.4 : 0.3),
+                          color: (color ?? (isDarkMode ? AppTheme.darkPrimaryColor : AppTheme.primaryColor)).withOpacity(isDarkMode ? 0.4 : 0.3),
                           blurRadius: 10,
                           spreadRadius: 1,
                           offset: const Offset(0, 3),
@@ -521,12 +567,12 @@ class _CheckInScreenState extends State<CheckInScreen> with SingleTickerProvider
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  // カスタム画像アイコンを表示 - 元の画像をそのまま表示
-                  Image.asset(
-                    'assets/images/$iconId.png',
-                    width: 70,
-                    height: 70,
-                    // 色の適用を削除して元の画像をそのまま表示
+                  Icon(
+                    icon,
+                    size: 36,
+                    color: isSelected 
+                        ? color 
+                        : secondaryTextColor,
                   ),
                   const SizedBox(height: 8),
                   Text(
@@ -544,6 +590,12 @@ class _CheckInScreenState extends State<CheckInScreen> with SingleTickerProvider
             ),
           );
         },
+      ),
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

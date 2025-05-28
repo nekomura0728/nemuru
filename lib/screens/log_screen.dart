@@ -214,7 +214,7 @@ class _LogScreenState extends State<LogScreen> with SingleTickerProviderStateMix
               shape: BoxShape.circle,
             ),
             todayDecoration: BoxDecoration(
-              color: AppTheme.primaryColor.withOpacity(0.3),
+              color: AppTheme.primaryColor.withValues(alpha: 0.3),
               shape: BoxShape.circle,
             ),
             selectedDecoration: BoxDecoration(
@@ -226,7 +226,7 @@ class _LogScreenState extends State<LogScreen> with SingleTickerProviderStateMix
             formatButtonVisible: true,
             titleCentered: true,
             formatButtonDecoration: BoxDecoration(
-              color: AppTheme.primaryColor.withOpacity(0.1),
+              color: AppTheme.primaryColor.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(16),
             ),
             formatButtonTextStyle: TextStyle(
@@ -246,7 +246,7 @@ class _LogScreenState extends State<LogScreen> with SingleTickerProviderStateMix
                     margin: const EdgeInsets.all(1.0), // Minimal margin
                     alignment: Alignment.center,
                     decoration: BoxDecoration(
-                      color: Colors.grey.withOpacity(0.05),
+                      color: Colors.grey.withValues(alpha: 0.05),
                       shape: BoxShape.circle,
                     ),
                     child: Stack(
@@ -375,7 +375,7 @@ class _LogScreenState extends State<LogScreen> with SingleTickerProviderStateMix
                           children: [
                             Icon(
                               Icons.workspace_premium,
-                              color: AppTheme.accentColor.withOpacity(0.5),
+                              color: AppTheme.accentColor.withValues(alpha: 0.5),
                               size: 24,
                             ),
                             const SizedBox(width: 12),
@@ -501,7 +501,7 @@ class _LogScreenState extends State<LogScreen> with SingleTickerProviderStateMix
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                   decoration: BoxDecoration(
-                    color: moodColor.withOpacity(0.2),
+                    color: moodColor.withValues(alpha: 0.2),
                     borderRadius: BorderRadius.circular(16),
                   ),
                   child: Text(

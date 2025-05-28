@@ -4,6 +4,16 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:nemuru/theme/app_theme.dart';
 
+/// エラータイプの列挙型
+enum ErrorType {
+  network,      // ネットワーク接続エラー
+  timeout,      // タイムアウトエラー
+  server,       // サーバーエラー
+  authentication, // 認証エラー
+  unknown,      // 不明なエラー
+  validation    // 入力検証エラー
+}
+
 /// エラーハンドリングサービス
 /// アプリ全体で統一されたエラー処理を提供します
 class ErrorHandlingService {
@@ -11,16 +21,6 @@ class ErrorHandlingService {
   static final ErrorHandlingService _instance = ErrorHandlingService._internal();
   factory ErrorHandlingService() => _instance;
   ErrorHandlingService._internal();
-
-  /// エラータイプの列挙型
-  enum ErrorType {
-    network,      // ネットワーク接続エラー
-    timeout,      // タイムアウトエラー
-    server,       // サーバーエラー
-    authentication, // 認証エラー
-    unknown,      // 不明なエラー
-    validation    // 入力検証エラー
-  }
 
   /// エラーメッセージとエラータイプのマッピング
   final Map<ErrorType, String> _errorMessages = {
@@ -171,7 +171,6 @@ class ErrorHandlingService {
     try {
       return await apiCall();
     } catch (error) {
-      print('API Error: $error');
       
       final errorType = getErrorTypeFromException(error);
       final message = '$errorMessage\n${getErrorMessage(errorType)}';

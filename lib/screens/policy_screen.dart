@@ -56,7 +56,7 @@ class PolicyScreen extends StatelessWidget {
             h2: TextStyle(
               fontSize: 20,
               fontWeight: FontWeight.bold,
-              color: AppTheme.primaryColor.withOpacity(0.8),
+              color: AppTheme.primaryColor.withValues(alpha: 0.8),
             ),
             p: const TextStyle(
               fontSize: 16,

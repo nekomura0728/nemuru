@@ -49,6 +49,39 @@ class ChatLogDetailScreen extends StatelessWidget {
               chatLog.reflection ?? '記録されていません。',
               style: Theme.of(context).textTheme.bodyLarge?.copyWith(height: 1.5),
             ),
+            // データベースにadviceカラムが存在しないため、一時的にコメントアウト
+            /*
+            const SizedBox(height: 24),
+            _buildSectionTitle(context, 'AIからのアドバイス'),
+            const SizedBox(height: 8),
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Theme.of(context).brightness == Brightness.dark
+                    ? AppTheme.darkCardColor.withValues(alpha: 0.8)
+                    : AppTheme.cardColor.withValues(alpha: 0.9),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: AppTheme.accentColor.withValues(alpha: 0.3),
+                  width: 1,
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.1),
+                    blurRadius: 4,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: Text(
+                'アドバイスが記録されていません。',
+                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                  height: 1.5,
+                  fontStyle: FontStyle.italic,
+                ),
+              ),
+            ),
+            */
             const SizedBox(height: 24),
             _buildSectionTitle(context, 'AIとの会話のまとめ'),
             const SizedBox(height: 8),

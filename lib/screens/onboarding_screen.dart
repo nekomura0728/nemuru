@@ -4,7 +4,7 @@ import 'package:nemuru/services/preferences_service.dart';
 import 'package:nemuru/services/notification_service.dart';
 import 'package:nemuru/theme/app_theme.dart';
 import 'package:nemuru/models/character.dart';
-import 'package:nemuru/widgets/character_image_painter.dart';
+import 'package:nemuru/widgets/character_image_widget.dart';
 
 class OnboardingScreen extends StatefulWidget {
   const OnboardingScreen({Key? key}) : super(key: key);
@@ -94,8 +94,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             height: 200,
             decoration: BoxDecoration(
               color: Theme.of(context).brightness == Brightness.dark 
-                  ? AppTheme.darkPrimaryColor.withOpacity(0.2) 
-                  : AppTheme.primaryColor.withOpacity(0.1),
+                  ? AppTheme.darkPrimaryColor.withValues(alpha: 0.2) 
+                  : AppTheme.primaryColor.withValues(alpha: 0.1),
               shape: BoxShape.circle,
             ),
             child: Stack(
@@ -115,7 +115,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     Icons.star,
                     size: 30,
                     color: Theme.of(context).brightness == Brightness.dark 
-                        ? Colors.amber.withOpacity(0.7) 
+                        ? Colors.amber.withValues(alpha: 0.7) 
                         : Colors.amber,
                   ),
                 ),
@@ -227,7 +227,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               width: 60,
               height: 60,
               decoration: BoxDecoration(
-                color: primaryColor.withOpacity(0.1),
+                color: primaryColor.withValues(alpha: 0.1),
                 shape: BoxShape.circle,
               ),
               child: Icon(
@@ -352,23 +352,21 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 width: 80,
                 height: 80,
                 decoration: BoxDecoration(
-                  color: primaryColor.withOpacity(0.2),
+                  color: primaryColor.withValues(alpha: 0.2),
                   shape: BoxShape.circle,
                   boxShadow: isSelected ? [
                     BoxShadow(
-                      color: primaryColor.withOpacity(0.3),
+                      color: primaryColor.withValues(alpha: 0.3),
                       blurRadius: 10,
                       spreadRadius: 2,
                     )
                   ] : [],
                 ),
                 child: ClipOval(
-                  child: CustomPaint(
-                    painter: CharacterImagePainter(
-                      imagePath: character.imagePath,
-                      characterId: character.id,
-                    ),
-                    size: const Size(80, 80),
+                  child: CharacterImageWidget(
+                    characterId: character.id,
+                    width: 80,
+                    height: 80,
                   ),
                 ),
               ),
@@ -420,10 +418,10 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               borderRadius: BorderRadius.circular(5),
               color: _currentPage == index
                   ? primaryColor
-                  : primaryColor.withOpacity(0.3),
+                  : primaryColor.withValues(alpha: 0.3),
               boxShadow: _currentPage == index ? [
                 BoxShadow(
-                  color: primaryColor.withOpacity(0.3),
+                  color: primaryColor.withValues(alpha: 0.3),
                   blurRadius: 5,
                   spreadRadius: 1,
                 )
@@ -455,7 +453,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   borderRadius: BorderRadius.circular(28),
                 ),
                 elevation: 4,
-                shadowColor: primaryColor.withOpacity(0.5),
+                shadowColor: primaryColor.withValues(alpha: 0.5),
               ),
               child: const Text('次へ', style: TextStyle(fontSize: 16)),
             ),
@@ -470,7 +468,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   borderRadius: BorderRadius.circular(28),
                 ),
                 elevation: 4,
-                shadowColor: accentColor.withOpacity(0.5),
+                shadowColor: accentColor.withValues(alpha: 0.5),
               ),
               child: const Text('眼を閉じて、心を開いて', style: TextStyle(fontSize: 16)),
             ),

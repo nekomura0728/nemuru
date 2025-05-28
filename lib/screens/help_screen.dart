@@ -224,7 +224,7 @@ class _HelpScreenState extends State<HelpScreen> with SingleTickerProviderStateM
             width: 40,
             height: 40,
             decoration: BoxDecoration(
-              color: primaryColor.withOpacity(0.1),
+              color: primaryColor.withValues(alpha: 0.1),
               shape: BoxShape.circle,
             ),
             child: Icon(

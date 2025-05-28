@@ -2,8 +2,6 @@ import 'dart:async';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:in_app_purchase/in_app_purchase.dart';
-import 'package:in_app_purchase_android/in_app_purchase_android.dart';
-import 'package:in_app_purchase_storekit/in_app_purchase_storekit.dart';
 import 'package:nemuru/services/preferences_service.dart';
 import 'package:nemuru/services/subscription_service.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -198,7 +196,6 @@ class PurchaseService extends ChangeNotifier {
       
       return response.data as Map<String, dynamic>;
     } catch (e) {
-      print('Supabase Functionの呼び出しエラー: $e');
       
       // エラーが発生した場合、デバッグモードでは仮の検証結果を返す
       if (const bool.fromEnvironment('dart.vm.product') == false) {

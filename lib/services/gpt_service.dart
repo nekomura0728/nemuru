@@ -122,11 +122,9 @@ class GPTService {
     // デバッグ用に強制的にモック応答を返す場合はここをtrueにする
     bool useDebugMockResponse = false;
     if (useDebugMockResponse && kDebugMode) {
-      print('デバッグ用にモック応答を返します');
       return _getMockResponse(_currentMood, _messageCount);
     }
 
-    print('Calling backend API for chat completion...');
     
     // タイムアウト設定
     const timeoutDuration = Duration(seconds: 30);
@@ -154,7 +152,6 @@ class GPTService {
           final data = jsonDecode(response.body);
           return data['choices'][0]['message']['content'];
         } catch (e) {
-          print('JSON parsing error: $e');
           throw Exception('レスポンスの解析に失敗しました。');
         }
       } else {
@@ -162,15 +159,13 @@ class GPTService {
         final errorHandlingService = ErrorHandlingService();
         final errorType = errorHandlingService.getErrorTypeFromStatusCode(response.statusCode);
         
-        print('Backend API error: ${response.statusCode}, ${response.body}');
         throw Exception('${errorHandlingService.getErrorMessage(errorType)} (ステータスコード: ${response.statusCode})');
       }
     } on TimeoutException catch (e) {
-      print('API request timed out: $e');
       if (context != null) {
         ErrorHandlingService().showErrorDialog(
           context, 
-          ErrorHandlingService.ErrorType.timeout,
+          ErrorType.timeout,
           onRetry: () async {
             // 再試行ロジックを実装する場所
           },
@@ -178,11 +173,10 @@ class GPTService {
       }
       return '応答の取得に時間がかかっています。ネットワーク環境を確認して、もう一度お試しください。';
     } on http.ClientException catch (e) {
-      print('HTTP client exception: $e');
       if (context != null) {
         ErrorHandlingService().showErrorDialog(
           context, 
-          ErrorHandlingService.ErrorType.network,
+          ErrorType.network,
           onRetry: () async {
             // 再試行ロジックを実装する場所
           },
@@ -190,9 +184,7 @@ class GPTService {
       }
       return 'ネットワークに接続できません。インターネット接続を確認して、もう一度お試しください。';
     } catch (e) {
-      print('Exception during backend API call: $e');
       if (kDebugMode && useDebugMockResponse) {
-        print('デバッグ用にモック応答を返します (exception case)');
         return _getMockResponse(_currentMood, _messageCount);
       }
       
@@ -391,7 +383,6 @@ class GPTService {
       // デフォルト値を返す
       return 0; // 左上の犬アイコン
     } catch (e) {
-      print('キャラクターID取得エラー: $e');
       return 0;
     }
   }
@@ -422,7 +413,6 @@ class GPTService {
     // デバッグ用に強制的にモック応答を返す場合はここをtrueにする
     bool useDebugMockSummary = false;
     if (useDebugMockSummary && kDebugMode) {
-      print('デバッグ用にモックの会話要約を返します');
       return "（モック）ユーザーは${_currentMood}な気分で、いくつかのやり取りをしました。";
     }
 
@@ -456,7 +446,6 @@ class GPTService {
       });
     }
 
-    print('Calling backend API for summarization...');
     try {
       final response = await http.post(
         Uri.parse(_summarizeBaseUrl), // Use the new backend URL for summarization
@@ -482,13 +471,10 @@ class GPTService {
           throw Exception('Failed to parse summary from API response: "choices" field is missing or empty.');
         }
       } else {
-        print('Backend API error (summarization): ${response.statusCode}, ${response.body}');
         throw Exception('Failed to generate summary from backend: ${response.statusCode} - ${response.body}');
       }
     } catch (e) {
-      print('Exception during backend summarization API call: $e');
       if (kDebugMode && useDebugMockSummary) { // Fallback to mock only if debug mock is globally enabled
-         print('デバッグ用にモックの会話要約を返します (exception case)');
          return "（モック）ユーザーは${_currentMood}な気分で、いくつかのやり取りをしました。";
       }
       // Consider a more user-friendly error message for production

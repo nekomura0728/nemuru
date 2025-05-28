@@ -11,7 +11,7 @@ import 'package:in_app_purchase/in_app_purchase.dart';
 
 import 'package:nemuru/theme/app_theme.dart';
 import 'package:nemuru/models/character.dart';
-import 'package:nemuru/widgets/character_image_painter.dart';
+import 'package:nemuru/widgets/character_image_widget.dart';
 import 'package:nemuru/constants/app_constants.dart';
 import 'package:nemuru/screens/policy_screen.dart';
 
@@ -207,7 +207,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     accessibilityService.setFontScaleFactor(option.scale);
                   }
                 },
-                selectedColor: AppTheme.primaryColor.withOpacity(0.3),
+                selectedColor: AppTheme.primaryColor.withValues(alpha: 0.3),
                 backgroundColor: Colors.grey[200],
                 labelStyle: TextStyle(
                   color: isSelected ? AppTheme.primaryColor : Colors.black87,
@@ -547,16 +547,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 width: 60,
                 height: 60,
                 decoration: BoxDecoration(
-                  color: AppTheme.primaryColor.withOpacity(0.1),
+                  color: AppTheme.primaryColor.withValues(alpha: 0.1),
                   shape: BoxShape.circle,
                 ),
                 child: ClipOval(
-                  child: CustomPaint(
-                    painter: CharacterImagePainter(
-                      imagePath: selectedCharacter.imagePath,
-                      characterId: selectedCharacterId,
-                    ),
-                    size: const Size(60, 60),
+                  child: CharacterImageWidget(
+                    characterId: selectedCharacterId,
+                    width: 60,
+                    height: 60,
                   ),
                 ),
               ),
@@ -687,16 +685,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                     width: 50,
                                     height: 50,
                                     decoration: BoxDecoration(
-                                      color: AppTheme.primaryColor.withOpacity(0.1),
+                                      color: AppTheme.primaryColor.withValues(alpha: 0.1),
                                       shape: BoxShape.circle,
                                     ),
                                     child: ClipOval(
-                                      child: CustomPaint(
-                                        painter: CharacterImagePainter(
-                                          imagePath: character.imagePath,
-                                          characterId: character.id,
-                                        ),
-                                        size: const Size(50, 50),
+                                      child: CharacterImageWidget(
+                                        characterId: character.id,
+                                        width: 50,
+                                        height: 50,
                                       ),
                                     ),
                                   ),
@@ -735,7 +731,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                               child: Container(
                                 padding: const EdgeInsets.all(4),
                                 decoration: BoxDecoration(
-                                  color: AppTheme.accentColor.withOpacity(0.9),
+                                  color: AppTheme.accentColor.withValues(alpha: 0.9),
                                   shape: BoxShape.circle,
                                 ),
                                 child: const Icon(
