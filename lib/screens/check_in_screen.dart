@@ -18,6 +18,7 @@ class CheckInScreen extends StatefulWidget {
 class _CheckInScreenState extends State<CheckInScreen> with SingleTickerProviderStateMixin {
   final TextEditingController _textController = TextEditingController();
   String? _selectedMood;
+  String? _moodMessage;
   // 気分アイコンのマッピング
   // アイコンはカスタム画像を使用するように変更
   final Map<String, int> _moodIconIds = {
@@ -294,7 +295,49 @@ class _CheckInScreenState extends State<CheckInScreen> with SingleTickerProvider
                           crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
                       _buildMoodSelection(),
-                      const SizedBox(height: 24),
+                      const SizedBox(height: 16),
+                      // 気持ちの説明文を表示
+                      if (_moodMessage != null)
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                          margin: const EdgeInsets.only(bottom: 16),
+                          decoration: BoxDecoration(
+                            color: Theme.of(context).brightness == Brightness.dark
+                                ? AppTheme.darkPrimaryColor.withValues(alpha: 0.15)
+                                : AppTheme.primaryColor.withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color: Theme.of(context).brightness == Brightness.dark
+                                  ? AppTheme.darkPrimaryColor.withValues(alpha: 0.3)
+                                  : AppTheme.primaryColor.withValues(alpha: 0.3),
+                              width: 1,
+                            ),
+                          ),
+                          child: Row(
+                            children: [
+                              Icon(
+                                Icons.lightbulb_outline,
+                                color: Theme.of(context).brightness == Brightness.dark
+                                    ? AppTheme.darkPrimaryColor
+                                    : AppTheme.primaryColor,
+                                size: 20,
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  _moodMessage!,
+                                  style: TextStyle(
+                                    color: Theme.of(context).brightness == Brightness.dark
+                                        ? AppTheme.darkTextColor
+                                        : AppTheme.textColor,
+                                    fontSize: 14,
+                                    height: 1.4,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
                       // TextField Container
                       Container(
                         padding: const EdgeInsets.all(4),
@@ -463,13 +506,6 @@ class _CheckInScreenState extends State<CheckInScreen> with SingleTickerProvider
           
           return GestureDetector(
             onTap: () {
-              setState(() {
-                _selectedMood = mood;
-              });
-              // タップ時に軽いフィードバックを表示
-              ScaffoldMessenger.of(context).clearSnackBars();
-              if (isSelected) return; // 既に選択されている場合は何もしない
-              
               final moodMessages = {
                 '喜': '嬉しい気持ちを選びました。今日の幸せな瞬間を教えてください。',
                 '怒': '怒りの気持ちを選びました。何があなたを苦しめているのでしょうか。',
@@ -479,16 +515,10 @@ class _CheckInScreenState extends State<CheckInScreen> with SingleTickerProvider
                 '焦': '不安な気持ちを選びました。あなたの心配事を聞かせてください。',
               };
               
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text(moodMessages[mood] ?? '気持ちを選びました'),
-                  duration: const Duration(seconds: 2),
-                  behavior: SnackBarBehavior.floating,
-                  backgroundColor: isDarkMode 
-                      ? AppTheme.darkCardColor 
-                      : AppTheme.primaryColor.withValues(alpha: 0.9),
-                ),
-              );
+              setState(() {
+                _selectedMood = mood;
+                _moodMessage = moodMessages[mood];
+              });
             },
             child: AnimatedContainer(
               duration: const Duration(milliseconds: 300),

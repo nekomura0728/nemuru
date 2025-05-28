@@ -40,7 +40,7 @@ serve(async (req: Request) => {
 
     // OpenAI APIへのリクエストボディを構築
     const requestBody = {
-      model: model || "gpt-4o",
+      model: model || "gpt-4o-mini",
       messages: messages,
       temperature: temperature || 0.7,
       max_tokens: max_tokens || 250, // NEMURUの応答は短めなので調整

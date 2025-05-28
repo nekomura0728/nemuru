@@ -461,7 +461,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             ElevatedButton(
               onPressed: _completeOnboarding,
               style: ElevatedButton.styleFrom(
-                backgroundColor: accentColor,
+                backgroundColor: primaryColor,
                 foregroundColor: Colors.white,
                 minimumSize: const Size(double.infinity, 56),
                 shape: RoundedRectangleBorder(
