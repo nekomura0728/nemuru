@@ -13,6 +13,17 @@ class ChatHistoryScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios_rounded),
+          onPressed: () {
+            // ナビゲーションスタックが空の場合はホーム画面に遷移
+            if (Navigator.of(context).canPop()) {
+              Navigator.of(context).pop();
+            } else {
+              Navigator.of(context).pushReplacementNamed('/check-in');
+            }
+          },
+        ),
         title: const Text('チャット履歴'),
       ),
       body: Consumer<ChatLogService>(

@@ -675,7 +675,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             ),
                             // ロックされたキャラクターはグレーアウト表示
                             color: isAvailable ? null : Colors.grey[200],
-                            child: Padding(
+                            child: Container(
+                              width: double.infinity,
+                              height: double.infinity,
                               padding: const EdgeInsets.all(8.0),
                               child: Column(
                                 mainAxisAlignment: MainAxisAlignment.center,
@@ -709,15 +711,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                   ),
                                   const SizedBox(height: 4),
                                   // キャラクターの性格
-                                  Text(
-                                    character.personality,
-                                    style: TextStyle(
-                                      fontSize: 10,
-                                      color: Colors.grey[600],
+                                  Expanded(
+                                    child: Text(
+                                      character.personality,
+                                      style: TextStyle(
+                                        fontSize: 10,
+                                        color: Colors.grey[600],
+                                      ),
+                                      textAlign: TextAlign.center,
+                                      maxLines: 2,
+                                      overflow: TextOverflow.ellipsis,
                                     ),
-                                    textAlign: TextAlign.center,
-                                    maxLines: 2,
-                                    overflow: TextOverflow.ellipsis,
                                   ),
                                 ],
                               ),

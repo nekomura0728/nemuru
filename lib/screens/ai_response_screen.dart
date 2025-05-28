@@ -624,10 +624,14 @@ class _AIResponseScreenState extends State<AIResponseScreen>
                       '無料プランの送信回数制限（7回）に達しました。プレミアムプランにアップグレードすると、30回まで送信可能になります。'),
               actions: [
                 TextButton(
-                  onPressed: () {
-                    Navigator.of(context).pop();
+                  onPressed: () async {
+                    Navigator.of(context).pop(); // ダイアログを閉じる
                     // 会話をまとめる
-                    _endConversation();
+                    await _endConversation();
+                    // まとめ生成後は現在の画面を閉じて前の画面に戻る
+                    if (mounted) {
+                      Navigator.of(context).pop(); // AI応答画面を閉じる
+                    }
                   },
                   child: const Text('会話をまとめる'),
                 ),
@@ -705,7 +709,7 @@ class _AIResponseScreenState extends State<AIResponseScreen>
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios_rounded),
           tooltip: '戻る',
-          onPressed: () => Navigator.of(context).pop(),
+          onPressed: () => _handleBackPressed(),
         ),
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(50.0),
@@ -1274,8 +1278,25 @@ class _AIResponseScreenState extends State<AIResponseScreen>
       if (_currentLogId != null) {
         await _chatLogService.updateLogSummary(_currentLogId!, summary);
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('会話が終了し、内容が記録されました。')),
+          // まとめを表示するダイアログ
+          await showDialog(
+            context: context,
+            barrierDismissible: false, // ダイアログ外タップで閉じないように
+            builder: (context) => AlertDialog(
+              title: const Text('今日の振り返り'),
+              content: SingleChildScrollView(
+                child: Text(
+                  summary,
+                  style: const TextStyle(fontSize: 14, height: 1.5),
+                ),
+              ),
+              actions: [
+                ElevatedButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  child: const Text('確認'),
+                ),
+              ],
+            ),
           );
         }
       }
@@ -1292,6 +1313,45 @@ class _AIResponseScreenState extends State<AIResponseScreen>
           _isConversationOver = true; // 会話終了フラグをセット
         });
       }
+    }
+  }
+
+  // 戻るボタンが押された時の処理
+  Future<void> _handleBackPressed() async {
+    // 会話が2回以上あり、まだ終了していない場合はまとめを生成するか確認
+    if (_gptService.conversationHistory.length >= 2 && !_isConversationOver && _currentLogId != null) {
+      final shouldGenerateSummary = await showDialog<bool>(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => AlertDialog(
+          title: const Text('会話を終了しますか？'),
+          content: const Text('途中ですが、これまでの会話をまとめて記録しますか？'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: const Text('まとめずに戻る'),
+            ),
+            ElevatedButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              child: const Text('まとめて記録'),
+            ),
+          ],
+        ),
+      );
+
+      if (shouldGenerateSummary == null) {
+        // ダイアログがキャンセルされた場合は何もしない
+        return;
+      }
+
+      if (shouldGenerateSummary == true) {
+        await _endConversation();
+      }
+    }
+    
+    // 画面を閉じてホーム画面に戻る
+    if (mounted) {
+      Navigator.of(context).pushReplacementNamed('/check-in');
     }
   }
 
@@ -1415,7 +1475,7 @@ class _AIResponseScreenState extends State<AIResponseScreen>
             ),
             label: Text('対話を終了する'),
             onPressed:
-                _isSending || _isConversationOver ? null : _endConversation,
+                _isSending || _isConversationOver || _gptService.conversationHistory.length < 2 ? null : _endConversation,
             style: OutlinedButton.styleFrom(
               foregroundColor:
                   isDarkMode ? Colors.white : AppTheme.primaryColor,

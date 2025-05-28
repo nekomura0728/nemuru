@@ -141,6 +141,17 @@ class _LogScreenState extends State<LogScreen> with SingleTickerProviderStateMix
     
     return Scaffold(
       appBar: AppBar(
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios_rounded),
+          onPressed: () {
+            // ナビゲーションスタックが空の場合はホーム画面に遷移
+            if (Navigator.of(context).canPop()) {
+              Navigator.of(context).pop();
+            } else {
+              Navigator.of(context).pushReplacementNamed('/check-in');
+            }
+          },
+        ),
         title: Text(
           '心の軌跡',
           style: Theme.of(context).textTheme.titleLarge,
@@ -491,7 +502,13 @@ class _LogScreenState extends State<LogScreen> with SingleTickerProviderStateMix
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
       ),
-      child: Padding(
+      child: InkWell(
+        onTap: () {
+          // チャット履歴画面に遷移
+          Navigator.of(context).pushNamed('/chat-history');
+        },
+        borderRadius: BorderRadius.circular(16),
+        child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -523,21 +540,69 @@ class _LogScreenState extends State<LogScreen> with SingleTickerProviderStateMix
               ],
             ),
             const SizedBox(height: 12),
-            Text(
-              userInput,
-              style: Theme.of(context).textTheme.bodyLarge,
-            ),
-            const Divider(height: 24),
-            Text(
-              aiResponse,
-              style: AppTheme.handwrittenStyle.copyWith(
-                fontSize: 16,
-                height: 1.5,
+            if (userInput.isNotEmpty) ...[
+              Text(
+                userInput,
+                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                  color: Theme.of(context).brightness == Brightness.dark 
+                      ? Colors.white 
+                      : AppTheme.textColor,
+                ),
               ),
-            ),
+              const Divider(height: 24),
+            ],
+            if (aiResponse.isNotEmpty) ...[
+              // まとめのテキストを処理してセクションタイトルのフォントサイズを調整
+              _buildFormattedSummary(context, aiResponse),
+            ],
           ],
         ),
       ),
+      ),
+    );
+  }
+  
+  // まとめテキストをフォーマットして表示
+  Widget _buildFormattedSummary(BuildContext context, String summary) {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    final lines = summary.split('\n');
+    final List<Widget> widgets = [];
+    
+    for (final line in lines) {
+      if (line.contains('【ユーザーの振り返り】') || line.contains('【アドバイス】')) {
+        // セクションタイトルは小さいフォントで
+        widgets.add(
+          Text(
+            line,
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.bold,
+              color: isDarkMode ? Colors.white70 : AppTheme.secondaryTextColor,
+              height: 1.5,
+            ),
+          ),
+        );
+      } else if (line.trim().isNotEmpty) {
+        // 本文は通常サイズで白いフォント
+        widgets.add(
+          Text(
+            line,
+            style: AppTheme.handwrittenStyle.copyWith(
+              fontSize: 16,
+              height: 1.5,
+              color: isDarkMode ? Colors.white : AppTheme.textColor,
+            ),
+          ),
+        );
+      }
+      if (line.trim().isEmpty && widgets.isNotEmpty) {
+        widgets.add(const SizedBox(height: 8));
+      }
+    }
+    
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: widgets,
     );
   }
 }

@@ -109,11 +109,11 @@ NEMURUはAIとの対話を通じてあなたの内省をサポートするツー
   // 無料版で利用可能なキャラクターID
   static const List<String> freeCharacterIds = ['dog', 'cat', 'rabbit', 'bear'];
   
-  // 会話の制限
-  static const int freeConversationLimit = 1; // 無料版：1日1回
+  // 会話の制限（注：これらは参考値で、実際の値はSubscriptionServiceで管理）
+  static const int freeConversationLimit = 2; // 無料版：1日2回
   static const int premiumConversationLimit = 3; // プレミアム版：1日3回
   static const int freeConversationTurns = 7; // 無料版：1回の会話で7往復
-  static const int premiumConversationTurns = 50; // プレミアム版：1回の会話で50往復
+  static const int premiumConversationTurns = 30; // プレミアム版：1回の会話で30往復
   
   // レスポンス文字数制限
   static const int minResponseLength = 85;
