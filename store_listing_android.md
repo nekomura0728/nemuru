@@ -72,7 +72,7 @@
 全ユーザー対象
 
 ## 連絡先メールアドレス
-support@nemuru-app.com（※ドメイン取得後に設定）
+nemuru11111@gmail.com
 
 ## プライバシーポリシーURL
 https://nemuru-app.github.io/privacy-policy/（※GitHub Pages等で公開予定）
