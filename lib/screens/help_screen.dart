@@ -73,7 +73,7 @@ class _HelpScreenState extends State<HelpScreen> with SingleTickerProviderStateM
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildSectionTitle('Nemuruの基本的な使い方'),
+          _buildSectionTitle('ねむるの基本的な使い方'),
           const SizedBox(height: 16),
           
           _buildGuideStep(
@@ -97,7 +97,7 @@ class _HelpScreenState extends State<HelpScreen> with SingleTickerProviderStateM
           _buildGuideStep(
             icon: Icons.book_outlined,
             title: '4. 振り返りの記録',
-            description: '会話の内容は自動で記録され、過去の心の軌跡として振り返ることができます。',
+            description: '会話の内容は端末内に安全に保存され、過去の心の軌跡として振り返ることができます。',
           ),
           
           const SizedBox(height: 24),
@@ -143,7 +143,7 @@ class _HelpScreenState extends State<HelpScreen> with SingleTickerProviderStateM
           
           _buildFaqItem(
             question: '無料版と有料版の違いは何ですか？',
-            answer: '無料版では1日に2回までの会話が可能です。有料版（プレミアムプラン）では実質無制限の会話が可能になります。また、有料版では会話の履歴を長期間保存することができます。',
+            answer: '無料版では1日に2回までの会話が可能です。有料版（プレミアムプラン）では1日3回まで会話でき、全てのキャラクターが利用可能になります。',
           ),
           
           _buildFaqItem(
@@ -153,12 +153,12 @@ class _HelpScreenState extends State<HelpScreen> with SingleTickerProviderStateM
           
           _buildFaqItem(
             question: '会話の途中で終了してしまった場合はどうなりますか？',
-            answer: '会話は自動的に保存されるため、アプリを再起動しても続きから再開できます。ただし、メッセージ送信前に終了した場合は、そのメッセージは保存されません。',
+            answer: '会話は端末内に自動保存されるため、アプリを再起動しても続きから再開できます。ただし、メッセージ送信前に終了した場合は、そのメッセージは保存されません。',
           ),
           
           _buildFaqItem(
             question: 'キャラクターを変更することはできますか？',
-            answer: '現在のバージョンでは、初回設定時に選んだキャラクターを使用します。将来のアップデートでキャラクター変更機能を追加する予定です。',
+            answer: '設定画面から「キャラクター選択」を選ぶことで、いつでもキャラクターを変更できます。無料版では4体、有料版では全12体のキャラクターが利用可能です。',
           ),
           
           _buildFaqItem(
@@ -183,7 +183,22 @@ class _HelpScreenState extends State<HelpScreen> with SingleTickerProviderStateM
           
           _buildFaqItem(
             question: 'プライバシーは守られますか？',
-            answer: 'はい、あなたの会話内容はプライバシーポリシーに基づいて厳重に保護されています。詳細は設定画面の「プライバシーポリシー」をご覧ください。',
+            answer: 'はい、完全ローカル保存により最高レベルのプライバシー保護を実現しています。全てのデータは端末内にのみ保存され、外部サーバーには送信されません（AI応答生成時を除く）。詳細は設定画面の「プライバシーポリシー」をご覧ください。',
+          ),
+          
+          _buildFaqItem(
+            question: 'データのバックアップはできますか？',
+            answer: '現在のバージョンでは、プライバシー保護を最優先とした完全ローカル保存のため、バックアップ機能は提供していません。端末を変更した場合、データの引き継ぎはできませんのでご了承ください。',
+          ),
+          
+          _buildFaqItem(
+            question: 'アプリを削除するとデータはどうなりますか？',
+            answer: 'アプリを削除すると、端末内に保存されている全てのデータ（会話履歴、設定など）が完全に削除されます。データは外部サーバーに保存されていないため、復元することはできません。',
+          ),
+          
+          _buildFaqItem(
+            question: 'AI応答生成時に送信される情報は？',
+            answer: 'AI応答生成時には、選択した気分と振り返りテキストのみがOpenAI APIに送信されます。個人を特定する情報（名前、メールアドレスなど）は一切含まれません。',
           ),
           
           _buildFaqItem(

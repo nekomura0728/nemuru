@@ -1,62 +1,66 @@
-import 'dart:convert'; // For jsonDecode if messages are stored as string initially
+import 'dart:convert';
+import 'dart:math';
 import 'package:flutter/foundation.dart';
-import 'package:supabase_flutter/supabase_flutter.dart'; // Supabase import
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:nemuru/models/chat_log.dart';
-
 import 'package:nemuru/services/subscription_service.dart';
 import 'package:nemuru/services/device_id_service.dart';
 import 'package:uuid/uuid.dart';
 
-/// チャットログを管理するサービス
+/// チャットログを管理するサービス（完全ローカル保存）
 class ChatLogService extends ChangeNotifier {
   final SubscriptionService _subscriptionService;
   final List<ChatLog> _logs = [];
-
-  // Supabase client instance
-  final _supabase = Supabase.instance.client;
-  // Name of the Supabase table
-  static const String _tableName = 'chat_logs';
+  
+  // ローカル保存用のキー
+  static const String _logsKey = 'chat_logs';
 
   ChatLogService(this._subscriptionService) {
     _init();
   }
 
-  // Initialize the service by loading logs from Supabase
+  // Initialize the service by loading logs from local storage
   Future<void> _init() async {
-    await _loadLogsFromSupabase();
+    await _loadLogsFromLocal();
   }
 
-  // Load logs from Supabase
-  Future<void> _loadLogsFromSupabase() async {
+  // Load logs from SharedPreferences
+  Future<void> _loadLogsFromLocal() async {
     try {
-      // デバイスIDを取得
-      final deviceId = await DeviceIdService.getDeviceId();
+      final prefs = await SharedPreferences.getInstance();
+      final logsJson = prefs.getStringList(_logsKey) ?? [];
       
-      // デバイスIDでフィルタリングしてログを取得
-      final response = await _supabase
-          .from(_tableName)
-          .select()
-          .eq('device_id', deviceId) // デバイスIDでフィルタリング
-          .order('date', ascending: false); // 日付順に並べ替え（新しい順）
-
-      _logs.clear(); // Clear local cache
-
-      if (response is List) {
-        for (var logData in response) {
-          if (logData is Map<String, dynamic>) {
-            // messages field is removed, summary will be handled by ChatLog.fromJson
-            _logs.add(ChatLog.fromJson(logData));
-          } else {
-             if (kDebugMode) print('Unexpected logData format: $logData');
-          }
+      _logs.clear();
+      
+      for (final logJson in logsJson) {
+        try {
+          final logData = jsonDecode(logJson) as Map<String, dynamic>;
+          _logs.add(ChatLog.fromJson(logData));
+        } catch (e) {
+          if (kDebugMode) print('Error parsing log: $e');
         }
-      } else {
-         if (kDebugMode) print('Unexpected response format from Supabase: $response');
       }
+      
+      // 日付順に並べ替え（新しい順）
+      _logs.sort((a, b) => b.date.compareTo(a.date));
+      
       notifyListeners();
     } catch (e) {
       if (kDebugMode) {
-        print('Error loading logs from Supabase: $e');
+        print('Error loading logs from local storage: $e');
+      }
+    }
+  }
+
+  // Save logs to SharedPreferences
+  Future<void> _saveLogsToLocal() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final logsJson = _logs.map((log) => jsonEncode(log.toJson())).toList();
+      await prefs.setStringList(_logsKey, logsJson);
+    } catch (e) {
+      if (kDebugMode) {
+        print('Error saving logs to local storage: $e');
       }
     }
   }
@@ -100,29 +104,28 @@ class ChatLogService extends ChangeNotifier {
       deviceId: deviceId,
     );
 
+    // 会話カウントを増加させる前に、制限チェックを行う
+    final isPremium = _subscriptionService.isPremium;
+    final todayCount = _subscriptionService.todayConversationCount;
+    final limit = isPremium 
+        ? SubscriptionService.premiumConversationLimit 
+        : SubscriptionService.freeConversationLimit;
+        
+    // 既に制限に達している場合はエラーをスロー
+    if ((isPremium && todayCount >= SubscriptionService.premiumConversationLimit) ||
+        (!isPremium && todayCount >= SubscriptionService.freeConversationLimit)) {
+      throw Exception('会話制限に達しました。プレミアムプラン: $isPremium, 今日の会話数: $todayCount, 制限: $limit');
+    }
+    
     try {
-      // 会話カウントを増加させる前に、制限チェックを行う
-      final isPremium = _subscriptionService.isPremium;
-      final todayCount = _subscriptionService.todayConversationCount;
-      final limit = isPremium 
-          ? SubscriptionService.premiumConversationLimit 
-          : SubscriptionService.freeConversationLimit;
-          
-      // 既に制限に達している場合はエラーをスロー
-      if ((isPremium && todayCount >= SubscriptionService.premiumConversationLimit) ||
-          (!isPremium && todayCount >= SubscriptionService.freeConversationLimit)) {
-        throw Exception('会話制限に達しました。プレミアムプラン: $isPremium, 今日の会話数: $todayCount, 制限: $limit');
-      }
-      
-      final logData = newLog.toJson();
-      await _supabase.from(_tableName).insert(logData);
       _logs.insert(0, newLog);
+      await _saveLogsToLocal();
       await _subscriptionService.incrementConversationCount();
       notifyListeners();
       return newLog;
     } catch (e) {
       if (kDebugMode) {
-        print('Error creating log in Supabase: $e');
+        print('Error creating log: $e');
       }
       rethrow;
     }
@@ -130,20 +133,12 @@ class ChatLogService extends ChangeNotifier {
 
   Future<void> deleteLog(String id) async {
     try {
-      // デバイスIDを取得
-      final deviceId = await DeviceIdService.getDeviceId();
-      
-      await _supabase
-          .from(_tableName)
-          .delete()
-          .eq('id', id)
-          .eq('device_id', deviceId); // デバイスIDによる制限を追加
-          
       _logs.removeWhere((log) => log.id == id);
+      await _saveLogsToLocal();
       notifyListeners();
     } catch (e) {
       if (kDebugMode) {
-        print('Error deleting log from Supabase: $e');
+        print('Error deleting log: $e');
       }
     }
   }
@@ -159,6 +154,17 @@ class ChatLogService extends ChangeNotifier {
   Future<void> updateLogSummary(String logId, String summary) async {
     final index = _logs.indexWhere((log) => log.id == logId);
     if (index != -1) {
+      // デバッグ: summaryの長さを確認
+      if (kDebugMode) {
+        print('DEBUG: updateLogSummary - summary length: ${summary.length}');
+        if (summary.contains('【アドバイス】')) {
+          final adviceIndex = summary.indexOf('【アドバイス】');
+          final adviceContent = summary.substring(adviceIndex);
+          print('DEBUG: Advice content length: ${adviceContent.length}');
+          print('DEBUG: Last 50 chars: ${summary.substring(summary.length - min(50, summary.length))}');
+        }
+      }
+      
       final oldLog = _logs[index];
       final updatedLog = ChatLog(
         id: oldLog.id,
@@ -171,20 +177,12 @@ class ChatLogService extends ChangeNotifier {
       );
 
       try {
-        // デバイスIDを取得
-        final deviceId = await DeviceIdService.getDeviceId();
-        
-        await _supabase
-            .from(_tableName)
-            .update({'summary': summary})
-            .eq('id', logId)
-            .eq('device_id', deviceId); // デバイスIDによる制限を追加
-
         _logs[index] = updatedLog;
+        await _saveLogsToLocal();
         notifyListeners();
       } catch (e) {
         if (kDebugMode) {
-          print('Error updating log summary in Supabase: $e');
+          print('Error updating log summary: $e');
         }
         rethrow;
       }

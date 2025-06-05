@@ -64,17 +64,22 @@ class _CheckInScreenState extends State<CheckInScreen> with SingleTickerProvider
   }
 
   Future<void> _submitCheckIn() async {
+    print('DEBUG: _submitCheckIn called');
+    print('DEBUG: _selectedMood = $_selectedMood');
+    print('DEBUG: text = ${_textController.text}');
+    
     // サブスクリプションサービスを取得
     final subscriptionService = Provider.of<SubscriptionService>(context, listen: false);
     final chatLogService = Provider.of<ChatLogService>(context, listen: false);
     final preferencesService = Provider.of<PreferencesService>(context, listen: false);
     
-    // 入力チェック
-    if (_selectedMood == null || _textController.text.trim().isEmpty) {
+    // 入力チェック - 気分のみ必須、テキストは任意に変更
+    if (_selectedMood == null) {
+      print('DEBUG: No mood selected');
       // Show error message
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('気分と今日の振り返りを入力してください'),
+          content: Text('気分を選択してください'),
           behavior: SnackBarBehavior.floating,
         ),
       );
@@ -94,30 +99,44 @@ class _CheckInScreenState extends State<CheckInScreen> with SingleTickerProvider
       }
     }
 
-    // チャットログを作成
-    final characterId = preferencesService.selectedCharacterId;
-    final reflection = _textController.text.trim();
-    final mood = _selectedMood!;
-    
+    try {
+      print('DEBUG: Starting log creation');
+      // チャットログを作成
+      final characterId = preferencesService.selectedCharacterId;
+      final reflection = _textController.text.trim();
+      final mood = _selectedMood!;
+      
+      print('DEBUG: characterId = $characterId, mood = $mood, reflection = $reflection');
 
-    // ChatLogを先に作成
-    final newLog = await chatLogService.createLog(
-      mood: mood,
-      reflection: reflection.isNotEmpty ? reflection : null, // 空の場合はnullを渡す
-      characterId: characterId,
-    );
-    
-    // AIレスポンススクリーンにChatLogオブジェクトを渡して遷移
-    // 必ず遷移するように、pushReplacementNamedを使用
-    Navigator.of(context).pushReplacementNamed(
-      '/ai-response',
-      arguments: {
-        'chatLog': newLog, // 作成したログを渡す
-        'characterId': characterId,
-        'mood': mood,
-        'reflection': reflection,
-      },
-    );
+      // ChatLogを先に作成
+      final newLog = await chatLogService.createLog(
+        mood: mood,
+        reflection: reflection.isNotEmpty ? reflection : null, // 空の場合はnullを渡す
+        characterId: characterId,
+      );
+      
+      print('DEBUG: Log created successfully, navigating...');
+      
+      // AIレスポンススクリーンにChatLogオブジェクトを渡して遷移
+      // 必ず遷移するように、pushReplacementNamedを使用
+      Navigator.of(context).pushReplacementNamed(
+        '/ai-response',
+        arguments: {
+          'chatLog': newLog, // 作成したログを渡す
+          'characterId': characterId,
+          'mood': mood,
+          'reflection': reflection,
+        },
+      );
+    } catch (e) {
+      print('ERROR: Failed to create log or navigate: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('エラーが発生しました: $e'),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
 
     // Reset input fields after successful submission
     if (mounted) {
@@ -493,7 +512,7 @@ class _CheckInScreenState extends State<CheckInScreen> with SingleTickerProvider
         physics: const NeverScrollableScrollPhysics(),
         gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
           crossAxisCount: 3,
-          childAspectRatio: 1.2,
+          childAspectRatio: 0.9, // 縦横比を調整して文字が見えるスペースを確保
           crossAxisSpacing: 16,
           mainAxisSpacing: 16,
         ),
@@ -548,28 +567,30 @@ class _CheckInScreenState extends State<CheckInScreen> with SingleTickerProvider
                       ]
                     : null,
               ),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  // カスタム画像アイコンを表示 - 元の画像をそのまま表示
-                  Image.asset(
-                    'assets/images/$iconId.png',
-                    width: 70,
-                    height: 70,
-                    // 色の適用を削除して元の画像をそのまま表示
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    mood,
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                      color: isSelected 
-                          ? color 
-                          : secondaryTextColor,
+              child: Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly, // スペースを均等に配分
+                  children: [
+                    // カスタム画像アイコンを表示 - さらにサイズを小さくして文字が見えるように調整
+                    Image.asset(
+                      'assets/images/$iconId.png',
+                      width: 40,
+                      height: 40,
+                      // 色の適用を削除して元の画像をそのまま表示
                     ),
-                  ),
-                ],
+                    Text(
+                      mood,
+                      style: TextStyle(
+                        fontSize: 14, // フォントサイズも小さくして収まりを良く
+                        fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                        color: isSelected 
+                            ? color 
+                            : secondaryTextColor,
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
           );

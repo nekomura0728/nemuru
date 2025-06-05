@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>プライバシーポリシー - NEMURU</title>
+    <title>プライバシーポリシー - ねむる</title>
     <style>
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
@@ -21,12 +21,12 @@
             box-shadow: 0 2px 10px rgba(0,0,0,0.1);
         }
         h1 {
-            color: #FFB3C1;
-            border-bottom: 3px solid #FFB3C1;
+            color: #2C5F7C;
+            border-bottom: 3px solid #2C5F7C;
             padding-bottom: 10px;
         }
         h2 {
-            color: #FF8FA3;
+            color: #3A7CA5;
             margin-top: 30px;
         }
         .footer {
@@ -36,7 +36,7 @@
             font-size: 14px;
         }
         a {
-            color: #FF8FA3;
+            color: #3A7CA5;
             text-decoration: none;
         }
         a:hover {
@@ -51,52 +51,65 @@
             font-size: 14px;
             margin-bottom: 20px;
         }
+        .highlight {
+            background-color: #E8F4FD;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <h1>プライバシーポリシー</h1>
-        <div class="last-updated">最終更新日: 2025年5月29日</div>
+        <div class="last-updated">最終更新日: 2025年6月5日</div>
 
         <h2>1. はじめに</h2>
-        <p>NEMURU（以下「当アプリ」）は、ユーザーのプライバシーを尊重し、個人情報の保護に努めています。本プライバシーポリシーでは、当アプリが収集する情報とその利用方法について説明します。</p>
+        <p>ねむる（以下「当アプリ」）は、ユーザーのプライバシーを最優先に考え、個人情報の保護に努めています。本プライバシーポリシーでは、当アプリが収集する情報とその利用方法について説明します。</p>
+
+        <div class="highlight">
+            <h3>完全プライベート設計</h3>
+            <p>当アプリは完全ローカル保存を採用しており、お客様の大切な個人データは全て端末内に安全に保存されます。外部サーバーへの送信は一切行いません。</p>
+        </div>
 
         <h2>2. 収集する情報</h2>
-        <p>当アプリでは、以下の情報を収集することがあります：</p>
+        <p>当アプリでは、以下の情報を端末内のみで収集・保存します：</p>
         <ul>
-            <li>ユーザーが入力した感情や振り返りのテキスト（AI応答生成のために使用）</li>
-            <li>デバイスIDや認証トークン等の識別情報（ユーザー管理のため）</li>
-            <li>アプリの使用状況に関する統計情報（機能改善・障害検知のため）</li>
+            <li>気分の記録（喜怒哀楽などの選択）</li>
+            <li>日々の振り返りテキスト</li>
+            <li>AI との会話履歴</li>
+            <li>選択したキャラクター情報</li>
+            <li>アプリ設定（ダークモード、フォントサイズ等）</li>
+            <li>デバイス固有の識別子（端末内でのデータ管理用）</li>
         </ul>
-        <p><strong>※当アプリは、氏名、電話番号、住所などの直接的な個人特定情報は収集していません。</strong></p>
+        <p><strong>※これらの情報は全て端末内にのみ保存され、外部に送信されることはありません。</strong></p>
 
         <h2>3. 情報の利用目的</h2>
-        <p>収集した情報は以下の目的で利用します：</p>
+        <p>収集した情報は以下の目的で端末内でのみ利用します：</p>
         <ul>
-            <li>AIとの対話機能の提供（OpenAIなど外部AI APIを利用）</li>
-            <li>ユーザー体験の向上とパーソナライズ</li>
-            <li>アプリの改善、新機能の開発</li>
-            <li>利用状況の統計的分析（匿名処理による）</li>
+            <li>過去の記録の表示・管理</li>
+            <li>使用回数の制限管理（無料/プレミアム）</li>
+            <li>アプリ設定の保存</li>
+            <li>AI 応答生成時の文脈理解（※）</li>
+        </ul>
+        <p>※AI 応答生成時のみ、入力された気分と振り返りテキストが OpenAI の API に送信されますが、個人を特定する情報は含まれません。</p>
+
+        <h2>4. 外部サービスとの連携</h2>
+        <p>当アプリは以下の場合にのみ外部サービスと通信します：</p>
+        <ul>
+            <li>AI 応答生成時：OpenAI API（気分と振り返りテキストのみ送信）</li>
+            <li>アプリ内課金時：Google Play 決済システム</li>
         </ul>
 
-        <h2>4. 情報の共有</h2>
-        <p>当アプリは、以下を除き、ユーザーの同意なく第三者に個人情報を提供することはありません：</p>
+        <h2>5. データの保管と削除</h2>
         <ul>
-            <li>外部サービス（OpenAI, Firebase, Supabase等）を通じたデータ処理</li>
-            <li>法令に基づく開示義務がある場合</li>
+            <li>全てのデータは端末内に保存されます</li>
+            <li>アプリをアンインストールすると、全てのデータが自動的に削除されます</li>
+            <li>端末を変更した場合、データの引き継ぎはできません</li>
         </ul>
 
-        <h2>5. データの保管</h2>
-        <p>ユーザーデータは、当アプリが信頼するクラウドサービス（Firebase, Supabaseなど）において暗号化された状態で保存され、適切なセキュリティ対策が講じられています。</p>
-
-        <h2>6. ユーザーの権利</h2>
-        <p>ユーザーは、以下の権利を有しています：</p>
-        <ul>
-            <li>自身の記録や感情ログの確認</li>
-            <li>削除や訂正の請求</li>
-            <li>利用停止の依頼</li>
-        </ul>
-        <p>これらはアプリ内の設定画面または <a href="mailto:nemuru11111@gmail.com">nemuru11111@gmail.com</a> までご連絡いただくことで実行可能です。</p>
+        <h2>6. お子様のプライバシー</h2>
+        <p>当アプリは13歳以上の方を対象としています。13歳未満のお子様の個人情報を意図的に収集することはありません。</p>
 
         <h2>7. プライバシーポリシーの変更</h2>
         <p>本ポリシーは予告なく変更されることがあります。重大な変更がある場合は、アプリ内で通知いたします。</p>
@@ -107,7 +120,7 @@
     </div>
     
     <div class="footer">
-        <p>&copy; 2025 NEMURU. All rights reserved.</p>
+        <p>&copy; 2025 ねむる. All rights reserved.</p>
     </div>
 </body>
 </html>

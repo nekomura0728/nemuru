@@ -276,7 +276,7 @@ enabled = false
 # domain = "example.clerk.accounts.dev"
 
 [edge_runtime]
-enabled = true
+enabled = false
 # Configure one of the supported request policies: `oneshot`, `per_worker`.
 # Use `oneshot` for hot reload, or `per_worker` for load testing.
 policy = "oneshot"
@@ -308,7 +308,7 @@ s3_access_key = "env(S3_ACCESS_KEY)"
 s3_secret_key = "env(S3_SECRET_KEY)"
 
 [functions.chat-completion]
-enabled = true
+enabled = false
 verify_jwt = true
 import_map = "./functions/chat-completion/deno.json"
 # Uncomment to specify a custom file path to the entrypoint.

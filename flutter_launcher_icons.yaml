@@ -1,6 +1,7 @@
 flutter_launcher_icons:
   android: true
   ios: false
-  image_path: "assets/icon/app_icon.png"
-  adaptive_icon_background: "#FFB3C1"  # 薄いピンク色
-  adaptive_icon_foreground: "assets/icon/app_icon_android.png"
+  image_path: "assets/icon/icon_new2.png"
+  min_sdk_android: 21
+  adaptive_icon_background: "#2C5F7C"  # 新アイコンの背景色（ダークブルー）
+  adaptive_icon_foreground: "assets/icon/icon_new2.png"

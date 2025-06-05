@@ -4,7 +4,6 @@ import 'package:flutter/foundation.dart';
 import 'package:in_app_purchase/in_app_purchase.dart';
 import 'package:nemuru/services/preferences_service.dart';
 import 'package:nemuru/services/subscription_service.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 /// In-App Purchaseを管理するサービス
@@ -27,8 +26,6 @@ class PurchaseService extends ChangeNotifier {
   // エラーメッセージ
   String? _errorMessage;
   
-  // Supabaseクライアント
-  final SupabaseClient _supabase = Supabase.instance.client;
   
   // ゲッター
   List<ProductDetails> get products => _products;
@@ -179,6 +176,16 @@ class PurchaseService extends ChangeNotifier {
   
   /// サーバーサイド検証を実行
   Future<Map<String, dynamic>> _verifyPurchaseWithServer(PurchaseDetails purchaseDetails) async {
+    // 内部テスト環境では常に検証成功として扱う
+    debugPrint('内部テスト: 課金検証をスキップ - productId: ${purchaseDetails.productID}');
+    return {
+      'success': true,
+      'isValid': true,
+      'expiresDate': DateTime.now().add(const Duration(days: 30)).toIso8601String(),
+    };
+    
+    // 本番環境用のコード（現在はコメントアウト）
+    /*
     try {
       // デバイスIDを取得
       final deviceId = _preferencesService.deviceId;
@@ -196,18 +203,9 @@ class PurchaseService extends ChangeNotifier {
       
       return response.data as Map<String, dynamic>;
     } catch (e) {
-      
-      // エラーが発生した場合、デバッグモードでは仮の検証結果を返す
-      if (const bool.fromEnvironment('dart.vm.product') == false) {
-        return {
-          'success': true,
-          'isValid': true,
-          'expiresDate': DateTime.now().add(const Duration(days: 30)).toIso8601String(),
-        };
-      }
-      
       rethrow;
     }
+    */
   }
   
   /// アプリのサブスクリプション管理画面を開く

@@ -56,7 +56,7 @@ class _LogScreenState extends State<LogScreen> with SingleTickerProviderStateMix
       // ChatLogにはmessagesプロパティがないため、summaryを使用
       final event = {
         'mood': log.mood,
-        'userInput': log.reflection, // Use reflection from ChatLog
+        'userInput': log.reflection ?? '', // Use reflection from ChatLog, empty if null
         'aiResponse': log.summary ?? '', // Use summary from ChatLog
         'timestamp': log.date, // Use date from ChatLog for the entry's primary timestamp
         // You might want to include characterId or other relevant fields if needed by _buildEventCard

@@ -16,16 +16,8 @@ import 'package:nemuru/services/chat_log_service.dart';
 import 'package:nemuru/services/accessibility_service.dart';
 import 'package:intl/intl.dart';
 import 'package:intl/date_symbol_data_local.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
-
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-
-  // Initialize Supabase
-  await Supabase.initialize(
-    url: 'https://ldellkrfbgzrheisjret.supabase.co',
-    anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxkZWxsa3JmYmd6cmhlaXNqcmV0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDgyMzg3MDgsImV4cCI6MjA2MzgxNDcwOH0.hFMbnqOdHIoROefUre-s7FLMowTh9nbmgV0bs46IrgY',
-  );
   
   // Set preferred orientations
   await SystemChrome.setPreferredOrientations([
