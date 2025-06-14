@@ -46,5 +46,9 @@ app.*.map.json
 
 # Private files (not to be shared publicly)
 revenue_simulation.md
+release_tasks.md
+screenshot_checklist.md
+store_listing_android.md
+check_in_screen_issue.md
 *.md.private
 /docs/private/
