@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:nemuru/models/chat_log.dart';
 import 'package:nemuru/models/message.dart';
+import 'package:nemuru/models/user_profile.dart';
 import 'package:nemuru/services/subscription_service.dart';
 import 'package:nemuru/services/device_id_service.dart';
 import 'package:uuid/uuid.dart';
@@ -192,5 +193,91 @@ class ChatLogService extends ChangeNotifier {
         rethrow;
       }
     }
+  }
+
+  /// ユーザーの傾向を分析してプロファイルを生成
+  UserProfile analyzeUserProfile() {
+    if (_logs.isEmpty) {
+      return UserProfile.empty();
+    }
+
+    // 1. 気分の傾向を分析
+    final Map<String, int> moodCount = {};
+    for (final log in _logs) {
+      moodCount[log.mood] = (moodCount[log.mood] ?? 0) + 1;
+    }
+    final frequentMood = moodCount.entries
+        .reduce((a, b) => a.value > b.value ? a : b)
+        .key;
+
+    // 2. よく話すトピックを分析（キーワード抽出）
+    final commonTopics = _extractCommonTopics();
+
+    // 3. 会話回数
+    final conversationCount = _logs.length;
+
+    // 4. よく選ぶキャラクター
+    final Map<int, int> characterCount = {};
+    for (final log in _logs) {
+      characterCount[log.characterId] = (characterCount[log.characterId] ?? 0) + 1;
+    }
+    final preferredCharacterId = characterCount.entries.isNotEmpty
+        ? characterCount.entries
+            .reduce((a, b) => a.value > b.value ? a : b)
+            .key
+        : 0;
+
+    // 5. 関係性レベル
+    final relationshipLevel = _getRelationshipLevel(conversationCount);
+
+    return UserProfile(
+      frequentMood: frequentMood,
+      commonTopics: commonTopics,
+      conversationCount: conversationCount,
+      preferredCharacterId: preferredCharacterId,
+      relationshipLevel: relationshipLevel,
+    );
+  }
+
+  /// よく話すトピックのキーワードを抽出
+  List<String> _extractCommonTopics() {
+    final List<String> allTexts = [];
+    
+    // reflectionとsummaryからテキストを収集
+    for (final log in _logs) {
+      if (log.reflection != null && log.reflection!.isNotEmpty) {
+        allTexts.add(log.reflection!);
+      }
+      if (log.summary != null && log.summary!.isNotEmpty) {
+        allTexts.add(log.summary!);
+      }
+    }
+
+    if (allTexts.isEmpty) return [];
+
+    // 簡単なキーワード抽出（よく出現する単語）
+    final keywords = <String>['仕事', '疲れ', '友達', '家族', '勉強', '恋愛', '健康', '趣味', '睡眠', '不安', 'ストレス'];
+    final topicCount = <String, int>{};
+
+    for (final text in allTexts) {
+      for (final keyword in keywords) {
+        if (text.contains(keyword)) {
+          topicCount[keyword] = (topicCount[keyword] ?? 0) + 1;
+        }
+      }
+    }
+
+    // 出現回数順にソートして上位3つを返す
+    final sortedTopics = topicCount.entries.toList()
+      ..sort((a, b) => b.value.compareTo(a.value));
+    
+    return sortedTopics.take(3).map((e) => e.key).toList();
+  }
+
+  /// 関係性レベルを判定
+  String _getRelationshipLevel(int count) {
+    if (count <= 2) return '初回';
+    if (count <= 10) return '慣れてきた';
+    return '親しい';
   }
 }

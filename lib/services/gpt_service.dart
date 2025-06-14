@@ -6,6 +6,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:nemuru/models/character.dart';
 import 'package:nemuru/models/message.dart';
+import 'package:nemuru/models/user_profile.dart';
 import 'package:nemuru/services/preferences_service.dart';
 import 'package:nemuru/services/error_handling_service.dart';
 
@@ -19,6 +20,7 @@ class GPTService {
   int _messageCount = 0; // 実際の会話カウント（初回の気分選択と質問応答を除く）
   bool _isInitialExchangeComplete = false; // 初回の気分選択と質問応答が完了したか
   String _currentMood = '';
+  UserProfile? _userProfile; // ユーザープロファイル
   
   // 会話履歴を取得
   List<Message> get conversationHistory => List.unmodifiable(_conversationHistory);
@@ -35,6 +37,11 @@ class GPTService {
     _messageCount = 0;
     _isInitialExchangeComplete = false;
     _currentMood = '';
+  }
+
+  // ユーザープロファイルを設定
+  void setUserProfile(UserProfile profile) {
+    _userProfile = profile;
   }
 
   // 最後のn個のメッセージを取得するヘルパーメソッド
@@ -265,9 +272,15 @@ class GPTService {
     final characterName = characterInfo['name'] ?? 'キャラクター';
     final speechStyle = characterInfo['speech_style'] ?? '優しい語調';
     
+    // パーソナライゼーション情報を追加
+    final personalizationContext = _userProfile?.getPersonalizationContext() ?? '';
+    
     return '''
 # ROLE
 あなたは睡眠前の心の整理をサポートする${characterName}です。
+
+# USER_CONTEXT
+$personalizationContext
 
 # TASK
 就寝前のユーザーの感情や振り返りに対して、高い共感性で応答し、心を軽やかにするサポートをしてください。
@@ -277,6 +290,7 @@ class GPTService {
 - 7回程度の短い会話を想定
 - キャラクター: $speechStyle
 - 医療アドバイス、説教、過度な楽観主義は禁止
+- USER_CONTEXTの情報を参考に、適切な口調と親しみやすさで対応
 
 # RESPONSE_STRATEGY
 ## 共感技法（必須）

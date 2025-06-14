@@ -329,6 +329,11 @@ class _AIResponseScreenState extends State<AIResponseScreen>
         _selectedMood = log.mood;
         _initialReflection = log.reflection;
         _gptService.setSelectedCharacterId(log.characterId);
+        
+        // ユーザープロファイルを設定
+        final userProfile = _chatLogService.analyzeUserProfile();
+        _gptService.setUserProfile(userProfile);
+        
         // _gptService.conversationHistory will be populated by _startChatSession or user interaction
         _startChatSession(); // Start or resume chat for this log ID
       } else {
@@ -346,6 +351,11 @@ class _AIResponseScreenState extends State<AIResponseScreen>
         _selectedMood = widget.mood!;
         _initialReflection = widget.initialReflection;
         _gptService.setSelectedCharacterId(widget.characterId!);
+        
+        // ユーザープロファイルを設定
+        final userProfile = _chatLogService.analyzeUserProfile();
+        _gptService.setUserProfile(userProfile);
+        
         // _currentLogId is null here, _startChatSession will create a new log.
         _startChatSession();
       }
