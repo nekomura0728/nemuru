@@ -413,7 +413,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             if (yearlyProduct != null) ...[
               const SizedBox(height: 8),
               Text(
-                '年額 ${yearlyProduct.price} (お得なプラン)',
+                '年額 ${yearlyProduct.price.replaceAll('30分', '年')} (お得なプラン)',
                 style: const TextStyle(fontSize: 16),
               ),
             ] else if (!isReleaseMode && monthlyProduct == null) ...[ // デバッグモードで年額商品もなく、月額もなかった場合

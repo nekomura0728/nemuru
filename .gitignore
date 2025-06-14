@@ -43,3 +43,8 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# Private files (not to be shared publicly)
+revenue_simulation.md
+*.md.private
+/docs/private/

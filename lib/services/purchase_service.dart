@@ -125,8 +125,17 @@ class PurchaseService extends ChangeNotifier {
       } else {
         if (purchaseDetails.status == PurchaseStatus.error) {
           // エラー発生
-          _errorMessage = '購入エラー: ${purchaseDetails.error?.message}';
-          _isPurchasePending = false;
+          final errorCode = purchaseDetails.error?.code;
+          if (errorCode == 'BillingResponse.itemAlreadyOwned') {
+            // 既に所有している場合は成功として処理
+            debugPrint('アイテムは既に所有されています - プレミアム状態に設定');
+            await _subscriptionService.setPremiumStatus(true);
+            _isPurchasePending = false;
+            _errorMessage = null;
+          } else {
+            _errorMessage = '購入エラー: ${purchaseDetails.error?.message}';
+            _isPurchasePending = false;
+          }
         } else if (purchaseDetails.status == PurchaseStatus.purchased ||
                   purchaseDetails.status == PurchaseStatus.restored) {
           // 購入完了または復元完了

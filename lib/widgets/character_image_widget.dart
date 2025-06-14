@@ -44,6 +44,8 @@ class _CharacterImageWidgetState extends State<CharacterImageWidget> {
 
     try {
       final String imagePath = 'assets/images/${widget.characterId}.png';
+      
+      // まず画像の存在確認を行う
       final ByteData data = await rootBundle.load(imagePath);
       final Uint8List bytes = data.buffer.asUint8List();
       final ui.Codec codec = await ui.instantiateImageCodec(bytes);
@@ -56,10 +58,30 @@ class _CharacterImageWidgetState extends State<CharacterImageWidget> {
         });
       }
     } catch (e) {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
+      // 画像が見つからない場合はデバッグログを出力
+      debugPrint('Failed to load character image for ID ${widget.characterId}: $e');
+      
+      // フォールバック画像を試す
+      try {
+        const fallbackPath = 'assets/images/1.png'; // ポチの画像をフォールバック
+        final ByteData data = await rootBundle.load(fallbackPath);
+        final Uint8List bytes = data.buffer.asUint8List();
+        final ui.Codec codec = await ui.instantiateImageCodec(bytes);
+        final ui.FrameInfo fi = await codec.getNextFrame();
+        
+        if (mounted) {
+          setState(() {
+            _image = fi.image;
+            _isLoading = false;
+          });
+        }
+      } catch (fallbackError) {
+        debugPrint('Failed to load fallback image: $fallbackError');
+        if (mounted) {
+          setState(() {
+            _isLoading = false;
+          });
+        }
       }
     }
   }
@@ -82,10 +104,19 @@ class _CharacterImageWidgetState extends State<CharacterImageWidget> {
         width: widget.width,
         height: widget.height,
         decoration: BoxDecoration(
-          color: Colors.grey.shade200,
-          borderRadius: BorderRadius.circular(8),
+          color: Colors.grey.shade300,
+          borderRadius: BorderRadius.circular(widget.width * 0.5),
         ),
-        child: const Icon(Icons.error, color: Colors.grey),
+        child: Center(
+          child: Text(
+            '${widget.characterId}',
+            style: TextStyle(
+              color: Colors.grey.shade600,
+              fontSize: widget.width * 0.3,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ),
       );
     }
 

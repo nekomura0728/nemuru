@@ -1,4 +1,6 @@
 
+import 'message.dart';
+
 /// チャットログを管理するモデル
 class ChatLog {
   final String id;
@@ -10,6 +12,7 @@ class ChatLog {
   // final String? advice; // AIからのアドバイス
   final int characterId;
   final String deviceId; // デバイス固有のID
+  final List<Message>? fullConversation; // 会話の全ログ
 
   ChatLog({
     required this.id,
@@ -20,6 +23,7 @@ class ChatLog {
     // this.advice, // AIからのアドバイス
     required this.characterId,
     required this.deviceId,
+    this.fullConversation,
   });
 
   // JSONからChatLogを作成
@@ -33,6 +37,11 @@ class ChatLog {
       // advice: json['advice'] as String?,
       characterId: json['character_id'] as int,
       deviceId: json['device_id'] as String,
+      fullConversation: json['full_conversation'] != null
+          ? (json['full_conversation'] as List)
+              .map((msg) => Message.fromJson(msg))
+              .toList()
+          : null,
     );
   }
 
@@ -47,6 +56,7 @@ class ChatLog {
       // 'advice': advice,
       'character_id': characterId,
       'device_id': deviceId,
+      'full_conversation': fullConversation?.map((msg) => msg.toJson()).toList(),
     };
   }
 }

@@ -3,6 +3,7 @@ import 'dart:math';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:nemuru/models/chat_log.dart';
+import 'package:nemuru/models/message.dart';
 import 'package:nemuru/services/subscription_service.dart';
 import 'package:nemuru/services/device_id_service.dart';
 import 'package:uuid/uuid.dart';
@@ -14,6 +15,9 @@ class ChatLogService extends ChangeNotifier {
   
   // ローカル保存用のキー
   static const String _logsKey = 'chat_logs';
+  
+  // ゲッター
+  List<ChatLog> get logs => List.unmodifiable(_logs);
 
   ChatLogService(this._subscriptionService) {
     _init();
@@ -151,7 +155,7 @@ class ChatLogService extends ChangeNotifier {
     return _subscriptionService.hasReachedFreeLimit;
   }
 
-  Future<void> updateLogSummary(String logId, String summary) async {
+  Future<void> updateLogSummary(String logId, String summary, {List<Message>? fullConversation}) async {
     final index = _logs.indexWhere((log) => log.id == logId);
     if (index != -1) {
       // デバッグ: summaryの長さを確認
@@ -174,6 +178,7 @@ class ChatLogService extends ChangeNotifier {
         summary: summary, // Update the summary
         characterId: oldLog.characterId,
         deviceId: oldLog.deviceId,
+        fullConversation: fullConversation ?? oldLog.fullConversation,
       );
 
       try {

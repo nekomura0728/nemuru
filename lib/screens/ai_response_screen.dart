@@ -1274,9 +1274,12 @@ class _AIResponseScreenState extends State<AIResponseScreen>
       // 会話の要約を生成
       final summary = await _gptService.summarizeConversation();
 
-      // ログに要約を保存
+      // 会話の全ログを取得
+      final fullConversation = _gptService.conversationHistory;
+
+      // ログに要約と全会話を保存
       if (_currentLogId != null) {
-        await _chatLogService.updateLogSummary(_currentLogId!, summary);
+        await _chatLogService.updateLogSummary(_currentLogId!, summary, fullConversation: fullConversation);
         if (mounted) {
           // まとめを表示するダイアログ
           await showDialog(

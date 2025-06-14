@@ -128,6 +128,12 @@ class SubscriptionService extends ChangeNotifier {
     }
   }
 
+  // プレミアム状態を手動で設定（購入復元時などに使用）
+  Future<void> setPremiumStatus(bool isPremium) async {
+    await _preferencesService.setPremium(isPremium);
+    notifyListeners();
+  }
+
   // カウンターをロード
   void _loadCounts() async {
     _todayConversationCount = _preferencesService.todayConversationCount;

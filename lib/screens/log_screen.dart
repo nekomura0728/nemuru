@@ -7,6 +7,7 @@ import 'package:nemuru/services/subscription_service.dart';
 import 'package:nemuru/services/chat_log_service.dart';
 import 'package:nemuru/models/chat_log.dart';
 import 'package:nemuru/models/message.dart';
+import 'package:nemuru/screens/chat_log_detail_screen.dart';
 
 class LogScreen extends StatefulWidget {
   const LogScreen({Key? key}) : super(key: key);
@@ -23,6 +24,7 @@ class _LogScreenState extends State<LogScreen> with SingleTickerProviderStateMix
   
   // チャットログデータ
   Map<DateTime, List<Map<String, dynamic>>> _events = {};
+  Map<DateTime, List<ChatLog>> _chatLogs = {}; // ChatLogオブジェクトも保持
   ValueNotifier<List<Map<String, dynamic>>> _selectedEvents = ValueNotifier([]);
 
   @override
@@ -51,6 +53,7 @@ class _LogScreenState extends State<LogScreen> with SingleTickerProviderStateMix
     final List<ChatLog> allLogs = await chatLogService.getAllLogs();
 
     final Map<DateTime, List<Map<String, dynamic>>> newEvents = {};
+    final Map<DateTime, List<ChatLog>> newChatLogs = {};
     for (final log in allLogs) {
       final date = DateTime(log.date.year, log.date.month, log.date.day);
       // ChatLogにはmessagesプロパティがないため、summaryを使用
@@ -61,16 +64,20 @@ class _LogScreenState extends State<LogScreen> with SingleTickerProviderStateMix
         'timestamp': log.date, // Use date from ChatLog for the entry's primary timestamp
         // You might want to include characterId or other relevant fields if needed by _buildEventCard
         'characterId': log.characterId,
+        'logId': log.id, // ChatLogのIDを追加
       };
       if (newEvents[date] == null) {
         newEvents[date] = [];
+        newChatLogs[date] = [];
       }
       newEvents[date]!.add(event);
+      newChatLogs[date]!.add(log);
     }
 
     if (mounted) {
       setState(() {
         _events = newEvents;
+        _chatLogs = newChatLogs;
       });
       _updateSelectedEvents();
     }
@@ -504,8 +511,33 @@ class _LogScreenState extends State<LogScreen> with SingleTickerProviderStateMix
       ),
       child: InkWell(
         onTap: () {
-          // チャット履歴画面に遷移
-          Navigator.of(context).pushNamed('/chat-history');
+          // eventから日付とIDを取得して、対応するChatLogを検索
+          final timestamp = event['timestamp'] as DateTime;
+          final date = DateTime(timestamp.year, timestamp.month, timestamp.day);
+          final logId = event['logId'] as String?;
+          
+          if (logId != null && _chatLogs[date] != null) {
+            // IDでChatLogを検索
+            final chatLog = _chatLogs[date]!.firstWhere(
+              (log) => log.id == logId,
+              orElse: () => ChatLog(
+                id: DateTime.now().millisecondsSinceEpoch.toString(),
+                date: timestamp,
+                mood: mood,
+                reflection: userInput,
+                summary: aiResponse,
+                characterId: characterId,
+                deviceId: 'dummy-device-id',
+              ),
+            );
+            
+            // ログ詳細画面に遷移
+            Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (context) => ChatLogDetailScreen(chatLog: chatLog),
+              ),
+            );
+          }
         },
         borderRadius: BorderRadius.circular(16),
         child: Padding(
