@@ -27,7 +27,7 @@ supabase stop           # Stop local Supabase
 ## Architecture Overview
 
 ### Layer Structure
-- **Models** (`/lib/models/`): Data structures for Character, ChatLog, Message
+- **Models** (`/lib/models/`): Data structures for Character, ChatLog, Message, UserProfile
 - **Services** (`/lib/services/`): Business logic layer with singleton services
 - **Screens** (`/lib/screens/`): UI presentation layer
 - **Widgets** (`/lib/widgets/`): Reusable UI components
@@ -38,8 +38,8 @@ supabase stop           # Stop local Supabase
 - Persistent state via SharedPreferences (local) and Supabase (remote)
 
 ### Key Services
-- **GPTService**: Manages AI conversations with GPT-4o mini, character selection, and optimized prompts
-- **ChatLogService**: CRUD operations for chat history with Supabase persistence
+- **GPTService**: Manages AI conversations with GPT-4o mini, character selection, optimized prompts, and personalization
+- **ChatLogService**: CRUD operations for chat history with local persistence and user profile analysis
 - **SubscriptionService**: Handles Free/Premium tiers with usage limits (Free: 2 chats/day, Premium: 3 chats/day)
 - **PreferencesService**: Local settings storage including dark mode, character selection, font size
 - **NotificationService**: Daily reminder notifications at 23:00
@@ -80,6 +80,40 @@ supabase stop           # Stop local Supabase
 
 ## 最新の改善点
 
+### 振り返り機能の刷新（2025年6月14日実装）
+- **概要表示のみに変更**: 従来の「内容+アドバイス」構成から簡潔な概要（50-100文字）に変更
+- **全会話ログ保存**: ChatLogモデルにfullConversationフィールドを追加
+- **詳細表示機能**: chat_log_detail_screen.dartに「会話の詳細を見る」ボタンを追加
+- **チャットバブル形式**: 全会話をユーザー/AI別に見やすく表示
+- **GPTプロンプト最適化**: 要約生成を概要専用プロンプトに変更
+
+### 軽量パーソナライゼーション機能（2025年6月14日実装）
+- **UserProfileクラス**: 気分傾向、よく話すトピック、関係性レベルを分析
+- **軽量設計**: APIコスト最小限（2-3行の簡潔な情報のみプロンプトに追加）
+- **傾向分析**: 過去ログから最頻気分、キーワード抽出、関係性レベル判定
+- **口調調整**: 関係性（初回→慣れてきた→親しい）に応じた自然な会話
+- **リアルタイム分析**: ChatLogServiceで動的にユーザープロファイルを生成
+
+### データモデル拡張
+```dart
+// ChatLogモデルの追加フィールド
+final List<Message>? fullConversation; // 会話の全ログ
+
+// 新規UserProfileモデル
+class UserProfile {
+  final String frequentMood;        // 最頻気分
+  final List<String> commonTopics;  // よく話すトピック
+  final int conversationCount;      // 総会話回数
+  final String relationshipLevel;   // 関係性レベル
+}
+```
+
+### 技術実装詳細
+- **ChatLogService.analyzeUserProfile()**: ユーザー傾向を軽量分析
+- **GPTService.setUserProfile()**: パーソナライゼーション情報をプロンプトに統合
+- **キーワード抽出**: 「仕事」「疲れ」「友達」など11カテゴリのトピック分析
+- **関係性判定**: 会話回数に基づく段階的な親しみやすさ調整
+
 ### UI/UX改善
 - 気持ち選択時の説明文を入力欄上に移動、見やすいデザインに変更
 - 気持ちアイコンサイズを拡大（50px → 70px）
@@ -91,6 +125,7 @@ supabase stop           # Stop local Supabase
 - CharacterImageWidgetでキャラクター画像の白表示問題を解決
 - GPT-4o mini用にプロンプトを構造化・最適化
 - コード品質向上（デバッグprint削除、未使用import削除）
+- 完全ローカル保存への移行完了（Supabaseデータベース不使用）
 
 ## Android リリース進捗（2025年6月5日完了）
 
@@ -155,3 +190,22 @@ signingConfigs {
 flutter build appbundle --release
 # 出力: /Users/s.maemura/nemuru/build/app/outputs/bundle/release/app-release.aab
 ```
+
+## 開発継続ガイド
+
+### 重要な実装済み機能
+1. **振り返り機能**: 概要表示+詳細展開式（ChatLog.fullConversation使用）
+2. **パーソナライゼーション**: 軽量ユーザープロファイル分析（UserProfile使用）
+3. **完全ローカル保存**: SharedPreferencesによる高速・低コスト運用
+4. **課金システム**: Free/Premium階層、使用制限管理
+
+### 次の開発候補
+- **通知機能強化**: よりパーソナライズされた通知タイミング
+- **キャラクター追加**: 新しい個性とキャラクター画像
+- **データ分析**: ユーザー行動パターンのさらなる活用
+- **多言語対応**: 英語版の展開準備
+
+### 開発時の注意事項
+- APIコスト最小化を常に意識（GPT-4o mini使用、プロンプト最適化）
+- ローカル保存前提のデータ設計を維持
+- プライバシーファーストの開発方針を継続
