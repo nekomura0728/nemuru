@@ -43,7 +43,7 @@ serve(async (req: Request) => {
       model: model || "gpt-4o-mini",
       messages: messages,
       temperature: temperature || 0.7,
-      max_tokens: max_tokens || 250, // NEMURUの応答は短めなので調整
+      max_tokens: max_tokens || 250, // ねむるの応答は短めなので調整
       // TODO: 将来的にキャラクターの性格などを反映させる場合、
       // messagesにシステムプロンプトとしてキャラクター設定を追加する処理をここに入れる
       // 例: if (characterId) { messages.unshift({ role: "system", content: getCharacterPrompt(characterId) }); }

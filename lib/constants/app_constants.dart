@@ -56,7 +56,7 @@ class AppConstants {
 
 ## 9. お問い合わせ
 プライバシーに関するご質問は、以下の連絡先までお願いします：
-nemuru11111@gmail.com
+nekomura@liz-aria.com
 
 最終更新日：2025年6月5日
 ''';
@@ -115,14 +115,14 @@ nemuru11111@gmail.com
 本規約は日本法に準拠し、紛争が発生した場合は運営者所在地を管轄とする裁判所を専属的合意管轄とします。
 
 ## 13. お問い合わせ
-本規約に関するご質問は、nemuru11111@gmail.com までご連絡ください。
+本規約に関するご質問は、nekomura@liz-aria.com までご連絡ください。
 
 最終更新日：2025年6月5日
 ''';
   
   // AIの免責事項
   static const String aiDisclaimer = '''
-NEMURUはAIとの対話を通じてあなたの内省をサポートするツールです。
+ねむるはAIとの対話を通じてあなたの内省をサポートするツールです。
 医療行為や診断を目的としたものではなく、専門家のアドバイスに代わるものではありません。
 深刻な睡眠障害や精神的な問題がある場合は、医師や専門家にご相談ください。
 ''';
@@ -133,7 +133,7 @@ NEMURUはAIとの対話を通じてあなたの内省をサポートするツー
   // 会話の制限（注：これらは参考値で、実際の値はSubscriptionServiceで管理）
   static const int freeConversationLimit = 2; // 無料版：1日2回
   static const int premiumConversationLimit = 3; // プレミアム版：1日3回
-  static const int freeConversationTurns = 7; // 無料版：1回の会話で7往復
+  static const int freeConversationTurns = 5; // 無料版：1回の会話で5往復
   static const int premiumConversationTurns = 30; // プレミアム版：1回の会話で30往復
   
   // レスポンス文字数制限

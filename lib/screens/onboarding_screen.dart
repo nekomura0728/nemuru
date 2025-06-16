@@ -80,7 +80,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         children: [
           const SizedBox(height: 40),
           Text(
-            'NEMURUへようこそ',
+            'ねむるへようこそ',
             style: AppTheme.handwrittenStyle.copyWith(
               fontSize: 32,
               fontWeight: FontWeight.bold,
@@ -130,7 +130,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           ),
           const SizedBox(height: 16),
           Text(
-            'NEMURUは眠りにつく前のひとときに、一日を振り返り心を落ち着けるお手伝いをするアプリです。',
+            'ねむるは眠りにつく前のひとときに、一日を振り返り心を落ち着けるお手伝いをするアプリです。',
             style: Theme.of(context).textTheme.bodyMedium,
             textAlign: TextAlign.center,
           ),
@@ -159,7 +159,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         children: [
           const SizedBox(height: 20),
           Text(
-            'NEMURUの使い方',
+            'ねむるの使い方',
             style: AppTheme.handwrittenStyle.copyWith(
               fontSize: 32,
               fontWeight: FontWeight.bold,

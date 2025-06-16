@@ -13,7 +13,7 @@ import 'package:nemuru/services/error_handling_service.dart';
 class GPTService {
   // バックエンドAPIのエンドポイント（Supabase Edge Functions）
   static const String _chatCompletionsBaseUrl = 'https://ldellkrfbgzrheisjret.supabase.co/functions/v1/chat-completion';
-  static const String _summarizeBaseUrl = 'https://ldellkrfbgzrheisjret.supabase.co/functions/v1/chat-completion'; // 同じエンドポイントを使用（必要に応じて専用のsummarize関数を作成可能）
+  static const String _summarizeBaseUrl = 'https://ldellkrfbgzrheisjret.supabase.co/functions/v1/chat-completion'; // 同じエンドポイントを使用
 
   // 会話履歴を保持
   final List<Message> _conversationHistory = [];
@@ -143,9 +143,10 @@ class GPTService {
         Uri.parse(_chatCompletionsBaseUrl),
         headers: {
           'Content-Type': 'application/json',
+          // Firebase Functionsでは認証ヘッダー不要（Functions内でAPIキー処理）
         },
         body: jsonEncode({
-          'model': 'gpt-4o',
+          'model': 'gpt-4o-mini', // Firebase Functions用にgpt-4o-miniに変更
           'messages': _buildMessages(userInput),
           'max_tokens': 200, 
           'temperature': 0.7,
@@ -464,12 +465,10 @@ $personalizationContext
           // Authorization header is removed; backend will handle API key
         },
         body: jsonEncode({
-          'model': 'gpt-4o', // Backend might override or use this
+          'model': 'gpt-4o-mini', // Firebase Functions用にgpt-4o-miniに変更
           'messages': messagesForSummary,
           'max_tokens': 150, 
           'temperature': 0.5,
-          // Potentially pass other relevant info to backend if needed
-          // e.g., 'userId': 'some_user_id', 'mood': _currentMood
         }),
       );
 

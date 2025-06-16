@@ -233,7 +233,7 @@ class _CheckInScreenState extends State<CheckInScreen> with SingleTickerProvider
             ),
             const SizedBox(width: 8),
             Text(
-              'NEMURU',
+              'ねむる',
               style: AppTheme.handwrittenStyle.copyWith(
                 fontSize: 24,
                 fontWeight: FontWeight.bold,

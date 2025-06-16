@@ -54,7 +54,7 @@ class NotificationService {
     const AndroidNotificationDetails androidDetails = AndroidNotificationDetails(
       'nemuru_daily_reminder',
       'Daily Reminder',
-      channelDescription: 'Daily reminder to check in with NEMURU',
+      channelDescription: 'Daily reminder to check in with ねむる',
       importance: Importance.high,
       priority: Priority.high,
       showWhen: true,

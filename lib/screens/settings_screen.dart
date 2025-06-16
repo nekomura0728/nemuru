@@ -257,11 +257,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ],
             ),
             const SizedBox(height: 16),
-            _buildPlanFeature('1日1回の振り返り', true),
-            _buildPlanFeature('7日間のログ保存', true),
+            _buildPlanFeature('1日2回の振り返り', true),
+            _buildPlanFeature('3日間のログ保存', true),
+            _buildPlanFeature('パーソナライズ機能（基本）', true),
             _buildPlanFeature('無制限のログ閲覧', isPremium),
             _buildPlanFeature('全てのキャラクターが利用可能', isPremium),
-            _buildPlanFeature('応答テーマの選択', isPremium),
             const SizedBox(height: 16),
             if (!isPremium)
               ElevatedButton(
@@ -428,7 +428,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             const SizedBox(height: 8),
             _buildPlanFeature('無制限のログ閲覧', true),
             _buildPlanFeature('全てのキャラクターが利用可能', true),
-            _buildPlanFeature('応答テーマの選択', true),
+            _buildPlanFeature('パーソナライズ機能（高度）', true),
             _buildPlanFeature('一日に複数回の会話', true),
             const SizedBox(height: 16),
             const Text(

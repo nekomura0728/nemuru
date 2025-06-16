@@ -74,7 +74,7 @@ class NemuruApp extends StatelessWidget {
     final bool showOnboarding = !preferencesService.onboardingCompleted;
     
     return MaterialApp(
-      title: 'NEMURU',
+      title: 'ねむる',
       theme: AppTheme.lightThemeWithScale(fontScale: accessibilityService.fontScaleFactor),
       darkTheme: AppTheme.darkThemeWithScale(fontScale: accessibilityService.fontScaleFactor),
       themeMode: preferencesService.isDarkMode ? ThemeMode.dark : ThemeMode.light,

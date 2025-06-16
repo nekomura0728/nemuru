@@ -10,7 +10,7 @@ class SubscriptionService extends ChangeNotifier {
   static const int freeConversationLimit = 2; // 1日2セットまで
   static const int freeCharacterLimit = 4; // 4体まで
   static const int freeLogDaysLimit = 3; // 過去3日分まで
-  static const int freeConversationTurns = 7; // ユーザーの送信回数最大7回
+  static const int freeConversationTurns = 5; // ユーザーの送信回数最大5回
   
   // プレミアムプランの制限
   static const int premiumConversationLimit = 3; // 1日3セットまで
