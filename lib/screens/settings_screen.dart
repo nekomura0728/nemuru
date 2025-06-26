@@ -259,9 +259,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ],
             ),
             const SizedBox(height: 16),
-            _buildPlanFeature('1日2回の振り返り', true),
+            _buildPlanFeature('1日2回の会話（各5ターン）', true),
             _buildPlanFeature('3日間のログ保存', true),
             _buildPlanFeature('パーソナライズ機能（基本）', true),
+            _buildPlanFeature('1日3回の会話（各20ターン）', isPremium),
             _buildPlanFeature('無制限のログ閲覧', isPremium),
             _buildPlanFeature('全てのキャラクターが利用可能', isPremium),
             const SizedBox(height: 16),
@@ -431,7 +432,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             _buildPlanFeature('無制限のログ閲覧', true),
             _buildPlanFeature('全てのキャラクターが利用可能', true),
             _buildPlanFeature('パーソナライズ機能（高度）', true),
-            _buildPlanFeature('一日に複数回の会話', true),
+            _buildPlanFeature('1日3回まで会話可能（1回あたり20ターン）', true),
             const SizedBox(height: 16),
             const Text(
               '※ サブスクリプションは自動更新されます。解約はいつでも可能です。',
@@ -630,7 +631,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 Padding(
                   padding: const EdgeInsets.only(bottom: 16.0),
                   child: Text(
-                    'プレミアムプランでは全てのキャラクターが利用可能になります',
+                    'プレミアムプランでは全てのキャラクターが利用可能になり、1日3回まで会話できます',
                     style: TextStyle(
                       fontSize: 12,
                       color: Colors.grey[600],
