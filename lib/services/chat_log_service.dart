@@ -180,20 +180,44 @@ class ChatLogService extends ChangeNotifier {
       return UserProfile.empty();
     }
 
-    // 1. 気分の傾向を分析
+    // 1. 気分の傾向を分析（深度分析を含む）
     final Map<String, int> moodCount = {};
     for (final log in _logs) {
       moodCount[log.mood] = (moodCount[log.mood] ?? 0) + 1;
     }
-    final frequentMood = moodCount.entries
-        .reduce((a, b) => a.value > b.value ? a : b)
-        .key;
+    
+    // 最頻気分
+    final sortedMoods = moodCount.entries.toList()
+      ..sort((a, b) => b.value.compareTo(a.value));
+    final frequentMood = sortedMoods.isNotEmpty ? sortedMoods[0].key : '';
+    
+    // 2番目に多い気分
+    final secondMood = sortedMoods.length > 1 ? sortedMoods[1].key : null;
+    
+    // 最近7日間の気分パターン
+    final now = DateTime.now();
+    final sevenDaysAgo = now.subtract(const Duration(days: 7));
+    final recentLogs = _logs.where((log) => log.date.isAfter(sevenDaysAgo)).toList();
+    final recentMoodPattern = recentLogs.map((log) => log.mood).toList();
 
     // 2. よく話すトピックを分析（キーワード抽出）
     final commonTopics = _extractCommonTopics();
+    final topicCategories = _analyzeTopicCategories();
 
-    // 3. 会話回数
+    // 3. 会話回数と質
     final conversationCount = _logs.length;
+    
+    // 平均会話長を計算
+    double averageConversationLength = 0.0;
+    if (_logs.isNotEmpty) {
+      int totalMessages = 0;
+      for (final log in _logs) {
+        if (log.fullConversation != null) {
+          totalMessages += log.fullConversation!.length;
+        }
+      }
+      averageConversationLength = totalMessages / _logs.length;
+    }
 
     // 4. よく選ぶキャラクター
     final Map<int, int> characterCount = {};
@@ -206,15 +230,19 @@ class ChatLogService extends ChangeNotifier {
             .key
         : 0;
 
-    // 5. 関係性レベル
-    final relationshipLevel = _getRelationshipLevel(conversationCount);
+    // 5. 関係性レベル（質的判定を含む）
+    final relationshipLevel = _getRelationshipLevel(conversationCount, averageConversationLength);
 
     return UserProfile(
       frequentMood: frequentMood,
+      secondMood: secondMood,
       commonTopics: commonTopics,
+      topicCategories: topicCategories,
       conversationCount: conversationCount,
+      averageConversationLength: averageConversationLength,
       preferredCharacterId: preferredCharacterId,
       relationshipLevel: relationshipLevel,
+      recentMoodPattern: recentMoodPattern,
     );
   }
 
@@ -234,8 +262,21 @@ class ChatLogService extends ChangeNotifier {
 
     if (allTexts.isEmpty) return [];
 
-    // 簡単なキーワード抽出（よく出現する単語）
-    final keywords = <String>['仕事', '疲れ', '友達', '家族', '勉強', '恋愛', '健康', '趣味', '睡眠', '不安', 'ストレス'];
+    // 拡張キーワードリスト（より幅広い話題をカバー）
+    final keywords = <String>[
+      // 仕事関連
+      '仕事', '会社', '職場', '上司', '同僚', 'プロジェクト', '会議', '残業',
+      // 人間関係
+      '友達', '家族', '恋愛', '恋人', 'パートナー', '子供', '親', '友人',
+      // 健康・生活
+      '健康', '睡眠', '疲れ', '体調', '運動', '食事', 'ダイエット',
+      // 感情・精神
+      '不安', 'ストレス', '悩み', '心配', 'プレッシャー', '緊張',
+      // 趣味・娯楽
+      '趣味', '遊び', '旅行', '映画', '音楽', 'ゲーム', '読書',
+      // 学習・成長
+      '勉強', '学校', '試験', '資格', 'スキル', '成長'
+    ];
     final topicCount = <String, int>{};
 
     for (final text in allTexts) {
@@ -253,10 +294,68 @@ class ChatLogService extends ChangeNotifier {
     return sortedTopics.take(3).map((e) => e.key).toList();
   }
 
-  /// 関係性レベルを判定
-  String _getRelationshipLevel(int count) {
-    if (count <= 2) return '初回';
-    if (count <= 10) return '慣れてきた';
-    return '親しい';
+  /// 話題をカテゴリ別に分析
+  Map<String, int> _analyzeTopicCategories() {
+    final List<String> allTexts = [];
+    
+    // reflectionとsummaryからテキストを収集
+    for (final log in _logs) {
+      if (log.reflection != null && log.reflection!.isNotEmpty) {
+        allTexts.add(log.reflection!);
+      }
+      if (log.summary != null && log.summary!.isNotEmpty) {
+        allTexts.add(log.summary!);
+      }
+    }
+
+    if (allTexts.isEmpty) return {};
+
+    // カテゴリ別キーワードマッピング
+    final categoryKeywords = {
+      '仕事': ['仕事', '会社', '職場', '上司', '同僚', 'プロジェクト', '会議', '残業'],
+      '人間関係': ['友達', '家族', '恋愛', '恋人', 'パートナー', '子供', '親', '友人'],
+      '健康': ['健康', '睡眠', '疲れ', '体調', '運動', '食事', 'ダイエット'],
+      '趣味': ['趣味', '遊び', '旅行', '映画', '音楽', 'ゲーム', '読書'],
+    };
+    
+    final categoryCount = <String, int>{};
+    
+    for (final text in allTexts) {
+      for (final category in categoryKeywords.keys) {
+        for (final keyword in categoryKeywords[category]!) {
+          if (text.contains(keyword)) {
+            categoryCount[category] = (categoryCount[category] ?? 0) + 1;
+            break; // 同じカテゴリで複数マッチしても1回だけカウント
+          }
+        }
+      }
+    }
+    
+    return categoryCount;
+  }
+
+  /// 関係性レベルを判定（会話の質も考慮）
+  String _getRelationshipLevel(int count, double averageLength) {
+    // 基本的な回数による判定
+    if (count <= 2) {
+      return '初回';
+    }
+    
+    if (count <= 10) {
+      // 会話の質を考慮して調整
+      if (averageLength > 12.0) {
+        return '親しい'; // 短期間でも深い会話をしている
+      }
+      return '慣れてきた';
+    }
+    
+    // 長期間の関係
+    if (averageLength > 15.0) {
+      return '親しい'; // 深い関係
+    } else if (averageLength < 6.0) {
+      return '慣れてきた'; // 表面的な関係のまま
+    } else {
+      return '親しい'; // 通常の親しい関係
+    }
   }
 }
