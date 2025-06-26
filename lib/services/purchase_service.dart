@@ -1,13 +1,16 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:io';
+import 'dart:io' if (dart.library.html) 'package:nemuru/services/web_platform_stub.dart';
 import 'package:flutter/foundation.dart';
-import 'package:in_app_purchase/in_app_purchase.dart';
 import 'package:nemuru/services/preferences_service.dart';
 import 'package:nemuru/services/subscription_service.dart';
 import 'package:nemuru/constants/api_constants.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:http/http.dart' as http;
+
+// Conditional imports for platform-specific plugins
+import 'package:in_app_purchase/in_app_purchase.dart' 
+    if (dart.library.html) 'package:nemuru/services/web_purchase_stub.dart';
 
 /// In-App Purchaseを管理するサービス
 class PurchaseService extends ChangeNotifier {
@@ -15,6 +18,9 @@ class PurchaseService extends ChangeNotifier {
   final PreferencesService _preferencesService;
   final SubscriptionService _subscriptionService;
   StreamSubscription<List<PurchaseDetails>>? _subscription;
+  
+  // Web platform check
+  bool get isWebPlatform => kIsWeb;
   
   // 商品ID
   static const String _monthlySubscriptionId = 'nemuru_premium_monthly';
@@ -44,6 +50,13 @@ class PurchaseService extends ChangeNotifier {
   
   /// In-App Purchaseの初期化
   Future<void> _initializePurchase() async {
+    // Web プラットフォームでは購入機能を無効化
+    if (isWebPlatform) {
+      _errorMessage = 'ウェブ版では購入機能はご利用いただけません';
+      notifyListeners();
+      return;
+    }
+    
     // 利用可能かチェック
     final isAvailable = await _inAppPurchase.isAvailable();
     if (!isAvailable) {
@@ -96,6 +109,13 @@ class PurchaseService extends ChangeNotifier {
   Future<void> purchaseProduct(ProductDetails product) async {
     if (_isPurchasePending) return;
     
+    // Web プラットフォームでは購入不可
+    if (isWebPlatform) {
+      _errorMessage = 'ウェブ版では購入機能はご利用いただけません';
+      notifyListeners();
+      return;
+    }
+    
     _isPurchasePending = true;
     _errorMessage = null;
     notifyListeners();
@@ -107,11 +127,7 @@ class PurchaseService extends ChangeNotifier {
         applicationUserName: null,
       );
       
-      if (Platform.isIOS) {
-        await _inAppPurchase.buyNonConsumable(purchaseParam: purchaseParam);
-      } else {
-        await _inAppPurchase.buyNonConsumable(purchaseParam: purchaseParam);
-      }
+      await _inAppPurchase.buyNonConsumable(purchaseParam: purchaseParam);
     } catch (e) {
       _errorMessage = '購入処理中にエラーが発生しました: $e';
       _isPurchasePending = false;
@@ -193,17 +209,32 @@ class PurchaseService extends ChangeNotifier {
       final deviceId = _preferencesService.deviceId;
       
       // プラットフォーム固有のデータを準備
+      String platform = 'web';
+      if (!kIsWeb) {
+        try {
+          platform = Platform.isIOS ? 'ios' : 'android';
+        } catch (e) {
+          platform = 'unknown';
+        }
+      }
+      
       Map<String, dynamic> requestBody = {
-        'platform': Platform.isIOS ? 'ios' : 'android',
+        'platform': platform,
         'receipt': purchaseDetails.verificationData.serverVerificationData,
         'productId': purchaseDetails.productID,
         'deviceId': deviceId,
       };
       
       // Androidの場合は追加データが必要
-      if (Platform.isAndroid) {
-        requestBody['packageName'] = ApiConstants.packageName;
-        requestBody['purchaseToken'] = purchaseDetails.verificationData.serverVerificationData;
+      if (!kIsWeb) {
+        try {
+          if (Platform.isAndroid) {
+            requestBody['packageName'] = ApiConstants.packageName;
+            requestBody['purchaseToken'] = purchaseDetails.verificationData.serverVerificationData;
+          }
+        } catch (e) {
+          // Platform check failed, continue without Android-specific data
+        }
       }
       
       // HTTP リクエストを送信
@@ -248,24 +279,35 @@ class PurchaseService extends ChangeNotifier {
   /// アプリのサブスクリプション管理画面を開く
   Future<void> openSubscriptionManagement() async {
     try {
-      if (Platform.isIOS) {
-        // iOSの場合は設定アプリのサブスクリプション画面を開く
-        const url = 'itms-apps://apps.apple.com/account/subscriptions';
-        final uri = Uri.parse(url);
-        if (await canLaunchUrl(uri)) {
-          await launchUrl(uri);
-        } else {
-          _errorMessage = 'サブスクリプション管理画面を開けませんでした';
-          notifyListeners();
-        }
-      } else if (Platform.isAndroid) {
-        // Androidの場合はGoogle Playのサブスクリプション画面を開く
-        const url = 'https://play.google.com/store/account/subscriptions';
-        final uri = Uri.parse(url);
-        if (await canLaunchUrl(uri)) {
-          await launchUrl(uri, mode: LaunchMode.externalApplication);
-        } else {
-          _errorMessage = 'サブスクリプション管理画面を開けませんでした';
+      if (kIsWeb) {
+        // Webの場合は購入機能なしを通知
+        _errorMessage = 'ウェブ版では購入機能はご利用いただけません';
+        notifyListeners();
+      } else {
+        try {
+          if (Platform.isIOS) {
+            // iOSの場合は設定アプリのサブスクリプション画面を開く
+            const url = 'itms-apps://apps.apple.com/account/subscriptions';
+            final uri = Uri.parse(url);
+            if (await canLaunchUrl(uri)) {
+              await launchUrl(uri);
+            } else {
+              _errorMessage = 'サブスクリプション管理画面を開けませんでした';
+              notifyListeners();
+            }
+          } else if (Platform.isAndroid) {
+            // Androidの場合はGoogle Playのサブスクリプション画面を開く
+            const url = 'https://play.google.com/store/account/subscriptions';
+            final uri = Uri.parse(url);
+            if (await canLaunchUrl(uri)) {
+              await launchUrl(uri, mode: LaunchMode.externalApplication);
+            } else {
+              _errorMessage = 'サブスクリプション管理画面を開けませんでした';
+              notifyListeners();
+            }
+          }
+        } catch (e) {
+          _errorMessage = 'プラットフォーム情報の取得に失敗しました';
           notifyListeners();
         }
       }
@@ -277,6 +319,13 @@ class PurchaseService extends ChangeNotifier {
   
   /// 購入を復元
   Future<void> restorePurchases() async {
+    // Web プラットフォームでは復元不可
+    if (isWebPlatform) {
+      _errorMessage = 'ウェブ版では購入機能はご利用いただけません';
+      notifyListeners();
+      return;
+    }
+    
     _isPurchasePending = true;
     _errorMessage = null;
     notifyListeners();

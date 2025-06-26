@@ -14,7 +14,7 @@ class SubscriptionService extends ChangeNotifier {
   
   // プレミアムプランの制限
   static const int premiumConversationLimit = 3; // 1日3セットまで
-  static const int premiumConversationTurns = 30; // ユーザーの送信回数最大30回
+  static const int premiumConversationTurns = 20; // ユーザーの送信回数最大20回
 
   // 今日の会話回数
   int _todayConversationCount = 0;

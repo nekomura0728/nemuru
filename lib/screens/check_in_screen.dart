@@ -166,9 +166,9 @@ class _CheckInScreenState extends State<CheckInScreen> with SingleTickerProvider
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Text('無料プランでは1日に2回までのAI会話が可能です。会話回数は毎日午前0時にリセットされます。'),
+            const Text('無料プランでは1日に2回まで会話でき、1回あたり5回やり取りできます。会話回数は毎日午前0時にリセットされます。'),
             const SizedBox(height: 16),
-            const Text('プレミアムプランにアップグレードすると、実質無制限の会話をお楽しみいただけます。'),
+            const Text('プレミアムプランにアップグレードすると、1日3回まで会話でき、1回あたり20回までやり取りできます。'),
             const SizedBox(height: 8),
             Text(
               'プレミアムプラン: 月額 ¥480 (税込)',

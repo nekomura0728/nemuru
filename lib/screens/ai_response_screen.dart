@@ -487,9 +487,9 @@ class _AIResponseScreenState extends State<AIResponseScreen>
                     : Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Text('無料プランの1日の会話制限($limit回)に達しました。'),
+                          Text('無料プランでは1日$limit回まで会話でき、1回あたり5回やり取りできます。本日の会話制限に達しました。'),
                           const SizedBox(height: 16),
-                          const Text('プレミアムにアップグレードすると、1日3回まで会話できます。'),
+                          const Text('プレミアムプランでは1日3回まで会話でき、1回あたり20回までやり取りできます。'),
                         ],
                       ),
                 actions: [

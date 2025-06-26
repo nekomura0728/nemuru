@@ -143,7 +143,7 @@ class _HelpScreenState extends State<HelpScreen> with SingleTickerProviderStateM
           
           _buildFaqItem(
             question: '無料版と有料版の違いは何ですか？',
-            answer: '無料版では1日に2回までの会話が可能です。有料版（プレミアムプラン）では1日3回まで会話でき、全てのキャラクターが利用可能になります。',
+            answer: '無料版では1日に2セッションまで会話でき、1セッションあたり5回やり取りできます。有料版（プレミアムプラン）では1日3セッションまで会話でき、1セッションあたり20回やり取りでき、全てのキャラクターが利用可能になります。',
           ),
           
           _buildFaqItem(

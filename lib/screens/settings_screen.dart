@@ -7,7 +7,6 @@ import 'package:nemuru/services/accessibility_service.dart';
 import 'package:flutter/foundation.dart'; // kDebugModeのため
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:in_app_purchase/in_app_purchase.dart';
 
 import 'package:nemuru/theme/app_theme.dart';
 import 'package:nemuru/models/character.dart';
@@ -378,14 +377,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
     }
 
     // 月額プランと年額プランを安全に取得
-    ProductDetails? monthlyProduct;
+    dynamic monthlyProduct;
     try {
       monthlyProduct = products.firstWhere((p) => p.id.contains('monthly'));
     } catch (e) {
       monthlyProduct = null; // 見つからない場合はnull
     }
 
-    ProductDetails? yearlyProduct;
+    dynamic yearlyProduct;
     if (products.isNotEmpty) { // productsが空でない場合のみ年額プランを検索
       try {
         yearlyProduct = products.firstWhere((p) => p.id.contains('yearly'));

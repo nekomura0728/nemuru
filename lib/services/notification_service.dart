@@ -1,11 +1,23 @@
-import 'package:flutter_local_notifications/flutter_local_notifications.dart';
-import 'package:timezone/timezone.dart' as tz;
-import 'package:timezone/data/latest.dart' as tz_data;
+import 'package:flutter/foundation.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart'
+    if (dart.library.html) 'package:nemuru/services/web_notification_stub.dart';
+import 'package:timezone/timezone.dart' as tz
+    if (dart.library.html) 'package:nemuru/services/web_timezone_stub.dart';
+import 'package:timezone/data/latest.dart' as tz_data
+    if (dart.library.html) 'package:nemuru/services/web_timezone_stub.dart';
 
 class NotificationService {
   final FlutterLocalNotificationsPlugin _notificationsPlugin = FlutterLocalNotificationsPlugin();
   
+  // Web platform check
+  bool get isWebPlatform => kIsWeb;
+  
   Future<void> init() async {
+    // Web プラットフォームでは通知機能を無効化
+    if (isWebPlatform) {
+      return;
+    }
+    
     // Initialize timezone
     tz_data.initializeTimeZones();
     
@@ -35,6 +47,11 @@ class NotificationService {
   
   // Request permission for iOS
   Future<bool> requestPermission() async {
+    // Web プラットフォームでは通知許可なし
+    if (isWebPlatform) {
+      return false;
+    }
+    
     final bool? result = await _notificationsPlugin
         .resolvePlatformSpecificImplementation<IOSFlutterLocalNotificationsPlugin>()
         ?.requestPermissions(
@@ -47,6 +64,11 @@ class NotificationService {
   
   // Schedule daily notification at 23:00
   Future<void> scheduleDailyNotification() async {
+    // Web プラットフォームでは通知スケジュール不可
+    if (isWebPlatform) {
+      return;
+    }
+    
     // Cancel any existing notifications
     await _notificationsPlugin.cancelAll();
     

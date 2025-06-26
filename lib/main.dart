@@ -39,7 +39,7 @@ void main() async {
   // サブスクリプションサービスを初期化
   final subscriptionService = SubscriptionService(preferencesService);
   
-  // 購入サービスを初期化
+  // 購入サービスを初期化（Web以外のプラットフォーム用）
   final purchaseService = PurchaseService(preferencesService, subscriptionService);
   
   // チャットログサービスを初期化
