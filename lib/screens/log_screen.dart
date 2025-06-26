@@ -6,7 +6,6 @@ import 'package:provider/provider.dart';
 import 'package:nemuru/services/subscription_service.dart';
 import 'package:nemuru/services/chat_log_service.dart';
 import 'package:nemuru/models/chat_log.dart';
-import 'package:nemuru/models/message.dart';
 import 'package:nemuru/screens/chat_log_detail_screen.dart';
 
 class LogScreen extends StatefulWidget {

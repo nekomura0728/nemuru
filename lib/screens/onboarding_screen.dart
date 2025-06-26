@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:nemuru/services/preferences_service.dart';
-import 'package:nemuru/services/notification_service.dart';
 import 'package:nemuru/theme/app_theme.dart';
 import 'package:nemuru/models/character.dart';
 import 'package:nemuru/widgets/character_image_widget.dart';
