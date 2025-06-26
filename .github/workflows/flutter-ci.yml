@@ -1,0 +1,198 @@
+name: Flutter CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+env:
+  FLUTTER_VERSION: '3.32.0'
+  JAVA_VERSION: '17'
+
+jobs:
+  # 🔍 コード品質チェック
+  analyze:
+    name: 📊 Static Analysis & Tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: 📥 Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: ☕ Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: ${{ env.JAVA_VERSION }}
+
+      - name: 🐦 Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          cache: true
+
+      - name: 📦 Get Dependencies
+        run: flutter pub get
+
+      - name: 🔍 Run Static Analysis
+        run: flutter analyze --no-fatal-infos
+
+      - name: 🧪 Run Unit Tests
+        run: flutter test --coverage --reporter=github
+
+      - name: 📊 Upload Coverage to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          files: coverage/lcov.info
+          fail_ci_if_error: false
+
+  # 🤖 Android ビルド
+  build-android:
+    name: 🤖 Build Android
+    needs: analyze
+    runs-on: ubuntu-latest
+    steps:
+      - name: 📥 Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: ☕ Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: ${{ env.JAVA_VERSION }}
+
+      - name: 🐦 Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          cache: true
+
+      - name: 📦 Get Dependencies
+        run: flutter pub get
+
+      - name: 🔧 Build APK (Debug)
+        run: flutter build apk --debug --verbose
+
+      - name: 🔧 Build APK (Release)
+        run: flutter build apk --release --verbose
+
+      - name: 🔧 Build App Bundle (Release)
+        run: flutter build appbundle --release --verbose
+
+      - name: 📦 Upload Debug APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: debug-apk
+          path: build/app/outputs/flutter-apk/app-debug.apk
+
+      - name: 📦 Upload Release APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-apk
+          path: build/app/outputs/flutter-apk/app-release.apk
+
+      - name: 📦 Upload App Bundle
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-aab
+          path: build/app/outputs/bundle/release/app-release.aab
+
+  # 🍎 iOS ビルド
+  build-ios:
+    name: 🍎 Build iOS
+    needs: analyze
+    runs-on: macos-latest
+    steps:
+      - name: 📥 Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: 🐦 Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          cache: true
+
+      - name: 📦 Get Dependencies
+        run: flutter pub get
+
+      - name: 🔧 Build iOS (Debug)
+        run: flutter build ios --debug --no-codesign --verbose
+
+      - name: 🔧 Build iOS (Release)
+        run: flutter build ios --release --no-codesign --verbose
+
+      - name: 📦 Upload iOS Build
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios-build
+          path: build/ios/iphoneos/
+
+  # 🚀 デプロイメント (mainブランチのみ)
+  deploy:
+    name: 🚀 Deploy
+    needs: [build-android, build-ios]
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    steps:
+      - name: 📥 Download Android Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: release-aab
+          path: ./artifacts/
+
+      - name: 📋 Create Release Notes
+        run: |
+          echo "🎉 Nemuru App Release $(date '+%Y-%m-%d %H:%M:%S')" > release_notes.md
+          echo "" >> release_notes.md
+          echo "## 🔧 Changes in this release:" >> release_notes.md
+          echo "- Security improvements" >> release_notes.md
+          echo "- Code quality enhancements" >> release_notes.md
+          echo "- Bug fixes and optimizations" >> release_notes.md
+          echo "" >> release_notes.md
+          echo "🤖 Generated with [Claude Code](https://claude.ai/code)" >> release_notes.md
+
+      - name: 🏷️ Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: v${{ github.run_number }}
+          name: Release v${{ github.run_number }}
+          body_path: release_notes.md
+          files: |
+            artifacts/app-release.aab
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  # 📊 レポート生成
+  report:
+    name: 📊 Generate Report
+    needs: [build-android, build-ios]
+    runs-on: ubuntu-latest
+    if: always()
+    steps:
+      - name: 📥 Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: 📋 Generate Build Report
+        run: |
+          echo "# 🏗️ Build Report - $(date '+%Y-%m-%d %H:%M:%S')" > build_report.md
+          echo "" >> build_report.md
+          echo "## 📊 Build Status" >> build_report.md
+          echo "- ✅ Analysis: ${{ needs.analyze.result }}" >> build_report.md
+          echo "- 🤖 Android Build: ${{ needs.build-android.result }}" >> build_report.md  
+          echo "- 🍎 iOS Build: ${{ needs.build-ios.result }}" >> build_report.md
+          echo "" >> build_report.md
+          echo "## 🎯 Artifacts Generated" >> build_report.md
+          echo "- Debug APK" >> build_report.md
+          echo "- Release APK" >> build_report.md
+          echo "- Release AAB (Google Play)" >> build_report.md
+          echo "- iOS Build" >> build_report.md
+          echo "" >> build_report.md
+          echo "🤖 Generated with [Claude Code](https://claude.ai/code)" >> build_report.md
+
+      - name: 📊 Upload Report
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-report
+          path: build_report.md

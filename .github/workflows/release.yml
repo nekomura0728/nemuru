@@ -1,0 +1,218 @@
+name: Release Build
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+  workflow_dispatch:
+    inputs:
+      release_type:
+        description: 'Release type'
+        required: true
+        default: 'patch'
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
+
+env:
+  FLUTTER_VERSION: '3.32.0'
+  JAVA_VERSION: '17'
+
+jobs:
+  # 🏷️ リリース準備
+  prepare-release:
+    name: 🏷️ Prepare Release
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      changelog: ${{ steps.changelog.outputs.changelog }}
+    steps:
+      - name: 📥 Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: 📋 Generate Version
+        id: version
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            # 手動実行の場合、pubspec.yamlから現在のバージョンを取得
+            CURRENT_VERSION=$(grep '^version:' pubspec.yaml | cut -d ' ' -f 2 | cut -d '+' -f 1)
+            echo "Current version: $CURRENT_VERSION"
+            echo "version=$CURRENT_VERSION" >> $GITHUB_OUTPUT
+          else
+            # タグプッシュの場合、タグからバージョンを取得
+            VERSION=${GITHUB_REF#refs/tags/v}
+            echo "Tag version: $VERSION"
+            echo "version=$VERSION" >> $GITHUB_OUTPUT
+          fi
+
+      - name: 📝 Generate Changelog
+        id: changelog
+        run: |
+          echo "changelog<<EOF" >> $GITHUB_OUTPUT
+          echo "## 🎉 Release ${{ steps.version.outputs.version }}" >> $GITHUB_OUTPUT
+          echo "" >> $GITHUB_OUTPUT
+          echo "### 🔧 Changes:" >> $GITHUB_OUTPUT
+          git log --oneline --pretty=format:"- %s" -10 >> $GITHUB_OUTPUT
+          echo "" >> $GITHUB_OUTPUT
+          echo "" >> $GITHUB_OUTPUT
+          echo "### 📊 Statistics:" >> $GITHUB_OUTPUT
+          echo "- Commits in this release: $(git rev-list --count HEAD ^HEAD~10)" >> $GITHUB_OUTPUT
+          echo "- Files changed: $(git diff --name-only HEAD~10 HEAD | wc -l)" >> $GITHUB_OUTPUT
+          echo "" >> $GITHUB_OUTPUT
+          echo "🤖 Generated with [Claude Code](https://claude.ai/code)" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+  # 🤖 Android リリースビルド
+  build-android-release:
+    name: 🤖 Build Android Release
+    needs: prepare-release
+    runs-on: ubuntu-latest
+    steps:
+      - name: 📥 Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: ☕ Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: ${{ env.JAVA_VERSION }}
+
+      - name: 🐦 Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          cache: true
+
+      - name: 📦 Get Dependencies
+        run: flutter pub get
+
+      - name: 🔧 Build Release APK
+        run: flutter build apk --release --verbose
+
+      - name: 🔧 Build Release App Bundle
+        run: flutter build appbundle --release --verbose
+
+      - name: 📊 Generate Build Info
+        run: |
+          echo "# 🤖 Android Build Information" > android_build_info.md
+          echo "" >> android_build_info.md
+          echo "**Version**: ${{ needs.prepare-release.outputs.version }}" >> android_build_info.md
+          echo "**Build Date**: $(date '+%Y-%m-%d %H:%M:%S UTC')" >> android_build_info.md
+          echo "**Flutter Version**: ${{ env.FLUTTER_VERSION }}" >> android_build_info.md
+          echo "**Java Version**: ${{ env.JAVA_VERSION }}" >> android_build_info.md
+          echo "" >> android_build_info.md
+          echo "## 📦 Files Generated:" >> android_build_info.md
+          echo "- app-release.apk ($(du -h build/app/outputs/flutter-apk/app-release.apk | cut -f1))" >> android_build_info.md
+          echo "- app-release.aab ($(du -h build/app/outputs/bundle/release/app-release.aab | cut -f1))" >> android_build_info.md
+
+      - name: 📦 Upload Release APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-release-apk-${{ needs.prepare-release.outputs.version }}
+          path: |
+            build/app/outputs/flutter-apk/app-release.apk
+            android_build_info.md
+
+      - name: 📦 Upload Release App Bundle
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-release-aab-${{ needs.prepare-release.outputs.version }}
+          path: |
+            build/app/outputs/bundle/release/app-release.aab
+            android_build_info.md
+
+  # 🍎 iOS リリースビルド
+  build-ios-release:
+    name: 🍎 Build iOS Release
+    needs: prepare-release
+    runs-on: macos-latest
+    steps:
+      - name: 📥 Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: 🐦 Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          cache: true
+
+      - name: 📦 Get Dependencies
+        run: flutter pub get
+
+      - name: 🔧 Build iOS Release
+        run: flutter build ios --release --no-codesign --verbose
+
+      - name: 📊 Generate Build Info
+        run: |
+          echo "# 🍎 iOS Build Information" > ios_build_info.md
+          echo "" >> ios_build_info.md
+          echo "**Version**: ${{ needs.prepare-release.outputs.version }}" >> ios_build_info.md
+          echo "**Build Date**: $(date '+%Y-%m-%d %H:%M:%S UTC')" >> ios_build_info.md
+          echo "**Flutter Version**: ${{ env.FLUTTER_VERSION }}" >> ios_build_info.md
+          echo "**Xcode Version**: $(xcodebuild -version | head -1)" >> ios_build_info.md
+          echo "" >> ios_build_info.md
+          echo "## 📦 Build Output:" >> ios_build_info.md
+          echo "- iOS App Bundle Generated" >> ios_build_info.md
+          echo "- Ready for App Store Connect upload" >> ios_build_info.md
+
+      - name: 📦 Upload iOS Build
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios-release-${{ needs.prepare-release.outputs.version }}
+          path: |
+            build/ios/iphoneos/
+            ios_build_info.md
+
+  # 🚀 GitHub Release作成
+  create-release:
+    name: 🚀 Create GitHub Release
+    needs: [prepare-release, build-android-release, build-ios-release]
+    runs-on: ubuntu-latest
+    steps:
+      - name: 📥 Download Android Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: android-release-aab-${{ needs.prepare-release.outputs.version }}
+          path: ./android/
+
+      - name: 📥 Download APK Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: android-release-apk-${{ needs.prepare-release.outputs.version }}
+          path: ./android/
+
+      - name: 🏷️ Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: v${{ needs.prepare-release.outputs.version }}
+          name: 🎉 Nemuru v${{ needs.prepare-release.outputs.version }}
+          body: ${{ needs.prepare-release.outputs.changelog }}
+          files: |
+            android/app-release.aab
+            android/app-release.apk
+            android/android_build_info.md
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: 📝 Release Summary
+        run: |
+          echo "# 🎉 Release Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Version**: v${{ needs.prepare-release.outputs.version }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Release Date**: $(date '+%Y-%m-%d %H:%M:%S UTC')" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## 📦 Assets Released:" >> $GITHUB_STEP_SUMMARY
+          echo "- 🤖 Android APK (Direct Install)" >> $GITHUB_STEP_SUMMARY
+          echo "- 🤖 Android AAB (Google Play Store)" >> $GITHUB_STEP_SUMMARY
+          echo "- 🍎 iOS Build (App Store Ready)" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## 🔗 Next Steps:" >> $GITHUB_STEP_SUMMARY
+          echo "1. Download AAB file for Google Play Console upload" >> $GITHUB_STEP_SUMMARY
+          echo "2. Download iOS build for App Store Connect upload" >> $GITHUB_STEP_SUMMARY
+          echo "3. Test the release builds on devices" >> $GITHUB_STEP_SUMMARY

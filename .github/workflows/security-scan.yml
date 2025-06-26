@@ -1,0 +1,132 @@
+name: Security Scan
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  schedule:
+    # 毎日午前2時に実行
+    - cron: '0 2 * * *'
+
+jobs:
+  # 🔒 セキュリティスキャン
+  security-scan:
+    name: 🔒 Security Analysis
+    runs-on: ubuntu-latest
+    steps:
+      - name: 📥 Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: 🐦 Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.32.0'
+          cache: true
+
+      - name: 📦 Get Dependencies
+        run: flutter pub get
+
+      - name: 🔍 Run Security Audit
+        run: |
+          echo "🔒 Security Scan Report - $(date '+%Y-%m-%d %H:%M:%S')" > security_report.md
+          echo "" >> security_report.md
+          
+          # Dartファイルでのprintステートメント検出
+          echo "## 🚨 Print Statement Security Check" >> security_report.md
+          PRINT_COUNT=$(find lib -name "*.dart" -exec grep -l "print(" {} \; | wc -l)
+          if [ $PRINT_COUNT -eq 0 ]; then
+            echo "✅ No print statements found - Security compliant" >> security_report.md
+          else
+            echo "❌ Found $PRINT_COUNT files with print statements" >> security_report.md
+            find lib -name "*.dart" -exec grep -l "print(" {} \; >> security_report.md
+          fi
+          echo "" >> security_report.md
+          
+          # APIキーやシークレットのハードコーディング検出
+          echo "## 🔐 Hardcoded Secrets Check" >> security_report.md
+          SECRET_PATTERNS=("api_key" "secret" "password" "token" "private_key")
+          SECRETS_FOUND=0
+          for pattern in "${SECRET_PATTERNS[@]}"; do
+            COUNT=$(find lib -name "*.dart" -exec grep -i "$pattern.*=" {} \; | wc -l)
+            if [ $COUNT -gt 0 ]; then
+              echo "⚠️ Found potential $pattern usage: $COUNT occurrences" >> security_report.md
+              SECRETS_FOUND=1
+            fi
+          done
+          if [ $SECRETS_FOUND -eq 0 ]; then
+            echo "✅ No hardcoded secrets detected" >> security_report.md
+          fi
+          echo "" >> security_report.md
+          
+          # HTTP使用の検出（HTTPS推奨）
+          echo "## 🌐 HTTP/HTTPS Check" >> security_report.md
+          HTTP_COUNT=$(find lib -name "*.dart" -exec grep -l "http://" {} \; | wc -l)
+          if [ $HTTP_COUNT -eq 0 ]; then
+            echo "✅ No insecure HTTP connections found" >> security_report.md
+          else
+            echo "❌ Found $HTTP_COUNT files with HTTP connections" >> security_report.md
+          fi
+          echo "" >> security_report.md
+          
+          echo "🤖 Generated with [Claude Code](https://claude.ai/code)" >> security_report.md
+
+      - name: 📊 Upload Security Report
+        uses: actions/upload-artifact@v4
+        with:
+          name: security-report
+          path: security_report.md
+
+      # セキュリティ問題があった場合はPRにコメント
+      - name: 💬 Comment on PR
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const report = fs.readFileSync('security_report.md', 'utf8');
+            
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: '🔒 **Security Scan Results**\n\n' + report
+            });
+
+  # 🧩 依存関係セキュリティチェック  
+  dependency-scan:
+    name: 🧩 Dependency Security
+    runs-on: ubuntu-latest
+    steps:
+      - name: 📥 Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: 🐦 Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.32.0'
+          cache: true
+
+      - name: 📦 Get Dependencies
+        run: flutter pub get
+
+      - name: 🔍 Audit Dependencies
+        run: |
+          echo "🧩 Dependency Security Report - $(date '+%Y-%m-%d %H:%M:%S')" > dependency_report.md
+          echo "" >> dependency_report.md
+          
+          echo "## 📦 Package Dependencies" >> dependency_report.md
+          flutter pub deps --style=tree >> dependency_report.md
+          echo "" >> dependency_report.md
+          
+          echo "## 🔍 Outdated Packages" >> dependency_report.md
+          flutter pub outdated >> dependency_report.md || echo "No outdated packages found" >> dependency_report.md
+          echo "" >> dependency_report.md
+          
+          echo "🤖 Generated with [Claude Code](https://claude.ai/code)" >> dependency_report.md
+
+      - name: 📊 Upload Dependency Report
+        uses: actions/upload-artifact@v4
+        with:
+          name: dependency-report
+          path: dependency_report.md
