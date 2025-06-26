@@ -7,7 +7,6 @@ import 'package:flutter/material.dart';
 import 'package:nemuru/models/character.dart';
 import 'package:nemuru/models/message.dart';
 import 'package:nemuru/models/user_profile.dart';
-import 'package:nemuru/services/preferences_service.dart';
 import 'package:nemuru/services/error_handling_service.dart';
 
 class GPTService {

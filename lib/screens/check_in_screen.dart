@@ -6,7 +6,6 @@ import 'package:nemuru/services/subscription_service.dart';
 import 'package:nemuru/services/chat_log_service.dart';
 import 'package:nemuru/services/preferences_service.dart';
 import 'package:nemuru/screens/ai_response_screen.dart'; // 星空背景と流れ星のペインターをインポート
-import 'dart:math';
 
 class CheckInScreen extends StatefulWidget {
   const CheckInScreen({Key? key}) : super(key: key);

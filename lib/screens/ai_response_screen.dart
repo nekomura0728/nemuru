@@ -255,15 +255,6 @@ class _AIResponseScreenState extends State<AIResponseScreen>
   String? _currentLogId; // 現在のチャットログID
   String? _initialReflection; // チェックイン画面からの振り返りテキスト
 
-  // 気分の選択肢 (実際のアプリでは外部から取得または定数として定義)
-  final List<Map<String, dynamic>> _moods = [
-    {'label': '喜', 'value': '喜', 'color': AppTheme.joyColor},
-    {'label': '怒', 'value': '怒', 'color': AppTheme.angerColor},
-    {'label': '哀', 'value': '哀', 'color': AppTheme.sadnessColor},
-    {'label': '楽', 'value': '楽', 'color': AppTheme.pleasureColor},
-    {'label': '疲', 'value': '疲', 'color': AppTheme.tiredColor},
-    {'label': '焦', 'value': '焦', 'color': AppTheme.anxietyColor},
-  ];
 
   // 会話の終了フラグ (手動終了または自動終了を管理)
   bool _isConversationOver = false; // 手動終了用のフラグ
@@ -1374,10 +1365,6 @@ class _AIResponseScreenState extends State<AIResponseScreen>
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
     final primaryColor =
         isDarkMode ? AppTheme.darkPrimaryColor : AppTheme.primaryColor;
-    final accentColor =
-        isDarkMode ? AppTheme.darkAccentColor : AppTheme.accentColor;
-    final cardColor =
-        isDarkMode ? AppTheme.darkCardColor : Theme.of(context).cardColor;
     final secondaryTextColor = isDarkMode
         ? AppTheme.darkSecondaryTextColor
         : AppTheme.secondaryTextColor;

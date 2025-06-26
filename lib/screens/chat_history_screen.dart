@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart'; // For date formatting
 import 'package:provider/provider.dart';
-import 'package:nemuru/models/chat_log.dart';
 import 'package:nemuru/services/chat_log_service.dart';
 // import 'ai_response_screen.dart'; // AIResponseScreenへの直接遷移は変更
 import 'chat_log_detail_screen.dart'; // 新しい詳細画面（後で作成）

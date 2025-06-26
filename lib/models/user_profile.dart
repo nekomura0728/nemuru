@@ -14,12 +14,6 @@ class UserProfile {
     required this.relationshipLevel,
   });
 
-  /// 関係性レベルを会話回数から判定
-  static String _getRelationshipLevel(int count) {
-    if (count <= 2) return '初回';
-    if (count <= 10) return '慣れてきた';
-    return '親しい';
-  }
 
   /// 空のプロファイル（初回ユーザー用）
   static UserProfile empty() {

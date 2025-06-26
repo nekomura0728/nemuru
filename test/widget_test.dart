@@ -8,7 +8,6 @@ import 'package:nemuru/services/subscription_service.dart';
 import 'package:nemuru/services/purchase_service.dart';
 import 'package:nemuru/services/chat_log_service.dart';
 import 'package:nemuru/services/accessibility_service.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 
 void main() {
   testWidgets('NemuruApp launches successfully', (WidgetTester tester) async {
@@ -18,8 +17,8 @@ void main() {
     
     final notificationService = NotificationService();
     final subscriptionService = SubscriptionService(preferencesService);
-    final purchaseService = PurchaseService();
-    final chatLogService = ChatLogService();
+    final purchaseService = PurchaseService(preferencesService, subscriptionService);
+    final chatLogService = ChatLogService(subscriptionService);
     final accessibilityService = AccessibilityService();
     
     // Build our app and trigger a frame
