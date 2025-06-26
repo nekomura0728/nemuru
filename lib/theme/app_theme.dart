@@ -52,7 +52,7 @@ class AppTheme {
   static ThemeData lightThemeWithScale({double fontScale = 1.0}) {
     return ThemeData(
       primaryColor: primaryColor,
-      colorScheme: ColorScheme.light(
+      colorScheme: const ColorScheme.light(
         primary: primaryColor,
         secondary: accentColor,
         error: errorColor,
@@ -129,7 +129,7 @@ class AppTheme {
   static ThemeData darkThemeWithScale({double fontScale = 1.0}) {
     return ThemeData(
       primaryColor: darkPrimaryColor,
-      colorScheme: ColorScheme.dark(
+      colorScheme: const ColorScheme.dark(
         primary: darkPrimaryColor,
         secondary: darkAccentColor,
         error: errorColor,

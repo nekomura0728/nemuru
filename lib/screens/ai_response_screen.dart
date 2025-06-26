@@ -511,7 +511,9 @@ class _AIResponseScreenState extends State<AIResponseScreen>
             );
 
             // 制限に達している場合は前の画面に戻る
-            Navigator.of(context).pop();
+            if (mounted) {
+              Navigator.of(context).pop();
+            }
             return; // 処理を中断
           }
           return; // 処理を中断
@@ -654,9 +656,11 @@ class _AIResponseScreenState extends State<AIResponseScreen>
       }
     } catch (e) {
       // エラー処理
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('メッセージの送信に失敗しました')),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('メッセージの送信に失敗しました')),
+        );
+      }
     } finally {
       if (mounted) {
         setState(() {
@@ -837,13 +841,13 @@ class _AIResponseScreenState extends State<AIResponseScreen>
               showDialog(
                 context: context,
                 builder: (context) => AlertDialog(
-                  title: Text('心の対話について'),
-                  content: Column(
+                  title: const Text('心の対話について'),
+                  content: const Column(
                     mainAxisSize: MainAxisSize.min,
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text('ここでは、あなたの心に寄り添う対話をお楽しみいただけます。'),
-                      const SizedBox(height: 8),
+                      SizedBox(height: 8),
                       Text('・対話はいつでも終了できます'),
                       Text('・終了時には対話のまとめが保存されます'),
                       Text('・過去の対話は「心の軌跡」から確認できます'),
@@ -954,18 +958,18 @@ class _AIResponseScreenState extends State<AIResponseScreen>
                                   : Colors.white,
                               elevation: 2,
                               padding: const EdgeInsets.symmetric(vertical: 14),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(28),
+                              shape: const RoundedRectangleBorder(
+                                borderRadius: BorderRadius.all(Radius.circular(28)),
                               ),
                             ),
-                            child: Row(
+                            child: const Row(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
                                 Icon(
                                   Icons.history,
                                   size: 18,
                                 ),
-                                const SizedBox(width: 8),
+                                SizedBox(width: 8),
                                 Text('対話記録を見る'),
                               ],
                             ),
@@ -992,18 +996,18 @@ class _AIResponseScreenState extends State<AIResponseScreen>
                                       Brightness.dark
                                   ? Colors.black26
                                   : Colors.white,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(28),
+                              shape: const RoundedRectangleBorder(
+                                borderRadius: BorderRadius.all(Radius.circular(28)),
                               ),
                             ),
-                            child: Row(
+                            child: const Row(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
                                 Icon(
                                   Icons.home_outlined,
                                   size: 18,
                                 ),
-                                const SizedBox(width: 8),
+                                SizedBox(width: 8),
                                 Text('ホームに戻る'),
                               ],
                             ),
@@ -1475,7 +1479,7 @@ class _AIResponseScreenState extends State<AIResponseScreen>
               color: isDarkMode ? Colors.white : AppTheme.primaryColor,
               size: 18,
             ),
-            label: Text('対話を終了する'),
+            label: const Text('対話を終了する'),
             onPressed:
                 _isSending || _isConversationOver || _gptService.conversationHistory.length < 2 ? null : _endConversation,
             style: OutlinedButton.styleFrom(
