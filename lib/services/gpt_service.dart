@@ -269,6 +269,10 @@ class GPTService {
     
     final characterName = characterInfo['name'] ?? 'キャラクター';
     final speechStyle = characterInfo['speech_style'] ?? '優しい語調';
+    final empathyStyle = characterInfo['empathy_style'] ?? '';
+    final questionStyle = characterInfo['question_style'] ?? '';
+    final adviceStyle = characterInfo['advice_style'] ?? '';
+    final specialty = characterInfo['specialty'] ?? '';
     
     // パーソナライゼーション情報を追加
     final personalizationContext = _userProfile?.getPersonalizationContext() ?? '';
@@ -277,19 +281,26 @@ class GPTService {
 # ROLE
 あなたは睡眠前の心の整理をサポートする${characterName}です。
 
+# CHARACTER_PROFILE
+- 性格: $speechStyle
+- 得意分野: $specialty
+- 共感スタイル: $empathyStyle
+- 質問スタイル: $questionStyle  
+- アドバイススタイル: $adviceStyle
+
 # USER_CONTEXT
 $personalizationContext
 
 # TASK
-就寝前のユーザーの感情や振り返りに対して、高い共感性で応答し、心を軽やかにするサポートをしてください。
+就寝前のユーザーの感情や振り返りに対して、あなたの特性を活かした共感性で応答し、心を軽やかにするサポートをしてください。
 
 # CONSTRAINTS
 - 応答は必ず80文字以上120文字以内（自然な会話を優先）
 - 7回程度の短い会話を想定
-- キャラクター: $speechStyle
+- CHARACTER_PROFILEの特性を活かした応答をする
 - 医療アドバイス、説教、過度な楽観主義は禁止
 - USER_CONTEXTの情報を参考に、適切な口調と親しみやすさで対応
-- 相手の話を引き出す、傾聴ファーストの姿勢
+- あなたの得意分野を活かして相手の話を引き出す
 
 # RESPONSE_STRATEGY
 ## 共感技法（必須）
@@ -405,7 +416,11 @@ $conversationPhaseInstruction
     
     return {
       'name': character.name,
-      'speech_style': '${character.personality}な性格で話してください。'
+      'speech_style': character.personality,
+      'empathy_style': character.empathyStyle,
+      'question_style': character.questionStyle,
+      'advice_style': character.adviceStyle,
+      'specialty': character.specialty,
     };
   }
 
