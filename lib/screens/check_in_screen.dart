@@ -110,22 +110,26 @@ class _CheckInScreenState extends State<CheckInScreen> with SingleTickerProvider
       
       // AIレスポンススクリーンにChatLogオブジェクトを渡して遷移
       // 必ず遷移するように、pushReplacementNamedを使用
-      Navigator.of(context).pushReplacementNamed(
-        '/ai-response',
-        arguments: {
-          'chatLog': newLog, // 作成したログを渡す
-          'characterId': characterId,
-          'mood': mood,
-          'reflection': reflection,
-        },
-      );
+      if (mounted) {
+        Navigator.of(context).pushReplacementNamed(
+          '/ai-response',
+          arguments: {
+            'chatLog': newLog, // 作成したログを渡す
+            'characterId': characterId,
+            'mood': mood,
+            'reflection': reflection,
+          },
+        );
+      }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('エラーが発生しました: $e'),
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('エラーが発生しました: $e'),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
     }
 
     // Reset input fields after successful submission

@@ -422,7 +422,9 @@ class _AIResponseScreenState extends State<AIResponseScreen>
         );
 
         // 制限に達している場合は前の画面に戻る
-        Navigator.of(context).pop();
+        if (mounted) {
+          Navigator.of(context).pop();
+        }
         return false;
       }
     }
