@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 import 'package:nemuru/theme/app_theme.dart';
 import 'package:provider/provider.dart';
 import 'package:nemuru/services/subscription_service.dart';
@@ -205,13 +204,6 @@ class _CheckInScreenState extends State<CheckInScreen> with SingleTickerProvider
   
   @override
   Widget build(BuildContext context) {
-    // サブスクリプションサービスを取得
-    final subscriptionService = Provider.of<SubscriptionService>(context);
-    
-    // Get current date in Japanese format
-    final now = DateTime.now();
-    final dateFormat = DateFormat.yMMMMd('ja');
-    final formattedDate = dateFormat.format(now);
 
     return Scaffold(
       appBar: AppBar(

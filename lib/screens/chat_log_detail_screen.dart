@@ -20,12 +20,6 @@ class _ChatLogDetailScreenState extends State<ChatLogDetailScreen> {
   Widget build(BuildContext context) {
     final String formattedDate = DateFormat('yyyy年MM月dd日 HH:mm').format(widget.chatLog.date);
     final String moodDisplay = "気分: ${widget.chatLog.mood}";
-    final String reflectionDisplay = widget.chatLog.reflection?.isNotEmpty == true
-        ? "今日の振り返り:\n${widget.chatLog.reflection}"
-        : "今日の振り返りはありませんでした。";
-    final String summaryDisplay = widget.chatLog.summary?.isNotEmpty == true
-        ? "会話のまとめ:\n${widget.chatLog.summary}"
-        : "会話の概要はありません。";
 
     return Scaffold(
       appBar: AppBar(

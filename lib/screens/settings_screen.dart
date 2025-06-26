@@ -228,7 +228,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Widget _buildSubscriptionCard(BuildContext context) {
     // プレファレンスからプレミアムフラグを取得
     final preferencesService = Provider.of<PreferencesService>(context);
-    final subscriptionService = Provider.of<SubscriptionService>(context);
     final purchaseService = Provider.of<PurchaseService>(context);
     final bool isPremium = preferencesService.isPremium;
     final bool isPurchasePending = purchaseService.isPurchasePending;
