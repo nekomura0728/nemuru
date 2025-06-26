@@ -1,10 +1,13 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:in_app_purchase/in_app_purchase.dart';
 import 'package:nemuru/services/preferences_service.dart';
 import 'package:nemuru/services/subscription_service.dart';
+import 'package:nemuru/constants/api_constants.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:http/http.dart' as http;
 
 /// In-App Purchaseを管理するサービス
 class PurchaseService extends ChangeNotifier {
@@ -69,13 +72,13 @@ class PurchaseService extends ChangeNotifier {
   /// 商品情報をロード
   Future<void> _loadProducts() async {
     try {
-      final Set<String> _kIds = <String>{
+      final Set<String> productIds = <String>{
         _monthlySubscriptionId,
         _yearlySubscriptionId,
       };
       
       final ProductDetailsResponse response = 
-          await _inAppPurchase.queryProductDetails(_kIds);
+          await _inAppPurchase.queryProductDetails(productIds);
       
       if (response.notFoundIDs.isNotEmpty) {
         _errorMessage = '一部の商品情報が見つかりませんでした: ${response.notFoundIDs.join(", ")}';
@@ -185,36 +188,61 @@ class PurchaseService extends ChangeNotifier {
   
   /// サーバーサイド検証を実行
   Future<Map<String, dynamic>> _verifyPurchaseWithServer(PurchaseDetails purchaseDetails) async {
-    // 内部テスト環境では常に検証成功として扱う
-    debugPrint('内部テスト: 課金検証をスキップ - productId: ${purchaseDetails.productID}');
-    return {
-      'success': true,
-      'isValid': true,
-      'expiresDate': DateTime.now().add(const Duration(days: 30)).toIso8601String(),
-    };
-    
-    // 本番環境用のコード（現在はコメントアウト）
-    /*
     try {
       // デバイスIDを取得
       final deviceId = _preferencesService.deviceId;
       
-      // Supabase Edge Functionを呼び出す
-      final response = await _supabase.functions.invoke(
-        'verify-purchase',
-        body: {
-          'receipt': purchaseDetails.verificationData.serverVerificationData,
-          'deviceId': deviceId,
-          'productId': purchaseDetails.productID,
-          'platform': Platform.isIOS ? 'ios' : 'android',
-        },
-      );
+      // プラットフォーム固有のデータを準備
+      Map<String, dynamic> requestBody = {
+        'platform': Platform.isIOS ? 'ios' : 'android',
+        'receipt': purchaseDetails.verificationData.serverVerificationData,
+        'productId': purchaseDetails.productID,
+        'deviceId': deviceId,
+      };
       
-      return response.data as Map<String, dynamic>;
+      // Androidの場合は追加データが必要
+      if (Platform.isAndroid) {
+        requestBody['packageName'] = ApiConstants.packageName;
+        requestBody['purchaseToken'] = purchaseDetails.verificationData.serverVerificationData;
+      }
+      
+      // HTTP リクエストを送信
+      final response = await http.post(
+        Uri.parse(ApiConstants.verifyPurchaseUrl),
+        headers: ApiConstants.authHeaders,
+        body: jsonEncode(requestBody),
+      ).timeout(ApiConstants.apiTimeout);
+      
+      if (response.statusCode == 200) {
+        final responseData = jsonDecode(response.body) as Map<String, dynamic>;
+        
+        // 検証結果を標準形式に変換
+        return {
+          'success': responseData['success'] ?? false,
+          'isValid': responseData['valid'] ?? false,
+          'expiresDate': responseData['expiresDate'],
+          'error': responseData['error'],
+        };
+      } else {
+        // HTTPエラーの場合
+        return {
+          'success': false,
+          'isValid': false,
+          'error': 'サーバー検証エラー: HTTP ${response.statusCode}',
+        };
+      }
     } catch (e) {
-      rethrow;
+      // ネットワークエラーやその他の例外
+      if (kDebugMode) {
+        debugPrint('Purchase verification error: $e');
+      }
+      
+      return {
+        'success': false,
+        'isValid': false,
+        'error': '検証サービスに接続できませんでした: $e',
+      };
     }
-    */
   }
   
   /// アプリのサブスクリプション管理画面を開く

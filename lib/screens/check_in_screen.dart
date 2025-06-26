@@ -64,9 +64,6 @@ class _CheckInScreenState extends State<CheckInScreen> with SingleTickerProvider
   }
 
   Future<void> _submitCheckIn() async {
-    print('DEBUG: _submitCheckIn called');
-    print('DEBUG: _selectedMood = $_selectedMood');
-    print('DEBUG: text = ${_textController.text}');
     
     // サブスクリプションサービスを取得
     final subscriptionService = Provider.of<SubscriptionService>(context, listen: false);
@@ -75,7 +72,6 @@ class _CheckInScreenState extends State<CheckInScreen> with SingleTickerProvider
     
     // 入力チェック - 気分のみ必須、テキストは任意に変更
     if (_selectedMood == null) {
-      print('DEBUG: No mood selected');
       // Show error message
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -100,13 +96,10 @@ class _CheckInScreenState extends State<CheckInScreen> with SingleTickerProvider
     }
 
     try {
-      print('DEBUG: Starting log creation');
       // チャットログを作成
       final characterId = preferencesService.selectedCharacterId;
       final reflection = _textController.text.trim();
       final mood = _selectedMood!;
-      
-      print('DEBUG: characterId = $characterId, mood = $mood, reflection = $reflection');
 
       // ChatLogを先に作成
       final newLog = await chatLogService.createLog(
@@ -114,8 +107,6 @@ class _CheckInScreenState extends State<CheckInScreen> with SingleTickerProvider
         reflection: reflection.isNotEmpty ? reflection : null, // 空の場合はnullを渡す
         characterId: characterId,
       );
-      
-      print('DEBUG: Log created successfully, navigating...');
       
       // AIレスポンススクリーンにChatLogオブジェクトを渡して遷移
       // 必ず遷移するように、pushReplacementNamedを使用
@@ -129,7 +120,6 @@ class _CheckInScreenState extends State<CheckInScreen> with SingleTickerProvider
         },
       );
     } catch (e) {
-      print('ERROR: Failed to create log or navigate: $e');
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('エラーが発生しました: $e'),

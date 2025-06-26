@@ -18,6 +18,14 @@ flutter build ios       # Build for iOS
 flutter build apk       # Build for Android
 flutter run             # Run in development mode
 
+# Git自動コミット設定
+git add . && git commit -m "自動保存: $(date '+%Y-%m-%d %H:%M:%S')" # 自動保存用
+
+# 推奨開発フロー
+flutter analyze         # 静的解析 (必須)
+flutter test            # テスト実行後
+git add . && git commit -m "feat: 機能追加/修正内容" && git push  # 自動プッシュ
+
 # Supabase local development
 supabase start          # Start local Supabase instance
 supabase functions serve chat-completion  # Serve edge functions locally
@@ -191,6 +199,24 @@ flutter build appbundle --release
 # 出力: /Users/s.maemura/nemuru/build/app/outputs/bundle/release/app-release.aab
 ```
 
+## SuperClaude開発設定
+
+### Git自動保存設定
+- **自動コミット**: 作業後は自動でgit commit実行
+- **プッシュ戦略**: 機能完了時のみpush（作業中は頻繁なローカルコミット）
+- **ブランチ戦略**: feature/fix-security → main へのPRワークフロー
+
+### 優先開発順序
+1. **P0 (緊急)**: セキュリティ修正 → 自動コミット
+2. **P1 (高)**: 静的解析エラー修正 → 自動コミット  
+3. **P2 (中)**: パフォーマンス最適化 → 自動コミット
+4. **P3 (低)**: アーキテクチャ改善 → 機能PR
+
+### Claude Code作業パターン
+- 修正完了 → `flutter analyze` → 自動git commit
+- テスト完了 → `flutter test` → 自動git commit
+- 機能完了 → 手動PR作成・レビュー
+
 ## 開発継続ガイド
 
 ### 重要な実装済み機能
@@ -209,3 +235,47 @@ flutter build appbundle --release
 - APIコスト最小化を常に意識（GPT-4o mini使用、プロンプト最適化）
 - ローカル保存前提のデータ設計を維持
 - プライバシーファーストの開発方針を継続
+
+## リリース進行状況（2025年6月25日更新）
+
+### Android版リリース状況
+- **✅ 完了済み**: AABファイル生成、Google Play Console設定、内部テスト公開
+- **🔄 進行中**: 内部テスト実施中（課金機能テストを含む）
+- **📋 次のステップ**: クローズドテスト（12名以上、14日間）→ 製品版リリース
+
+### iOS版準備状況
+- **✅ 完了済み**: プロジェクト初期化、Info.plist設定、ストア掲載情報作成
+- **🔄 進行中**: Apple Developer アカウント審査待ち（年間$99）
+- **📋 審査完了後のタスク**:
+  1. Xcode での署名設定（開発チーム選択）
+  2. App Store Connect でのアプリ登録
+  3. TestFlight 設定とベータテスト
+  4. 審査提出と製品版リリース
+
+### 共通準備済み項目
+- Bundle ID統一: `com.nemuruapp.nemuru` (Android/iOS共通)
+- アプリ名: 「ねむる」
+- 課金プラン: 月額500円、年額5000円
+- プライバシーポリシー: https://nekomura0728.github.io/nemuru/privacy-policy/
+- ストア掲載情報完備（Android/iOS版）
+
+### 今後の重要タスク
+#### 短期（審査・テスト完了後すぐ）
+- [ ] iOS署名証明書・プロビジョニングプロファイル設定
+- [ ] App Store Connect アプリ登録
+- [ ] iOS TestFlight 設定
+- [ ] Android クローズドテスト移行
+- [ ] 両プラットフォームでの課金機能最終テスト
+
+#### 中期（リリース後）
+- [ ] ユーザーフィードバック収集・分析
+- [ ] パフォーマンス監視とクラッシュ対応
+- [ ] アップデート版リリース計画
+- [ ] マーケティング戦略実行
+
+#### 長期（機能拡張）
+- [ ] 通知機能のパーソナライゼーション強化
+- [ ] 新キャラクター追加（音声対応検討）
+- [ ] 睡眠データ分析機能の高度化
+- [ ] 多言語対応（英語版）
+- [ ] ウェアラブルデバイス連携検討

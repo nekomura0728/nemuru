@@ -42,7 +42,7 @@ class ChatLogService extends ChangeNotifier {
           final logData = jsonDecode(logJson) as Map<String, dynamic>;
           _logs.add(ChatLog.fromJson(logData));
         } catch (e) {
-          if (kDebugMode) print('Error parsing log: $e');
+          // Skip invalid log entries
         }
       }
       
@@ -51,9 +51,7 @@ class ChatLogService extends ChangeNotifier {
       
       notifyListeners();
     } catch (e) {
-      if (kDebugMode) {
-        print('Error loading logs from local storage: $e');
-      }
+      // Handle loading error silently
     }
   }
 
@@ -64,9 +62,7 @@ class ChatLogService extends ChangeNotifier {
       final logsJson = _logs.map((log) => jsonEncode(log.toJson())).toList();
       await prefs.setStringList(_logsKey, logsJson);
     } catch (e) {
-      if (kDebugMode) {
-        print('Error saving logs to local storage: $e');
-      }
+      // Handle saving error silently
     }
   }
 
@@ -129,9 +125,6 @@ class ChatLogService extends ChangeNotifier {
       notifyListeners();
       return newLog;
     } catch (e) {
-      if (kDebugMode) {
-        print('Error creating log: $e');
-      }
       rethrow;
     }
   }
@@ -142,9 +135,7 @@ class ChatLogService extends ChangeNotifier {
       await _saveLogsToLocal();
       notifyListeners();
     } catch (e) {
-      if (kDebugMode) {
-        print('Error deleting log: $e');
-      }
+      // Handle deletion error silently
     }
   }
   
@@ -159,16 +150,7 @@ class ChatLogService extends ChangeNotifier {
   Future<void> updateLogSummary(String logId, String summary, {List<Message>? fullConversation}) async {
     final index = _logs.indexWhere((log) => log.id == logId);
     if (index != -1) {
-      // デバッグ: summaryの長さを確認
-      if (kDebugMode) {
-        print('DEBUG: updateLogSummary - summary length: ${summary.length}');
-        if (summary.contains('【アドバイス】')) {
-          final adviceIndex = summary.indexOf('【アドバイス】');
-          final adviceContent = summary.substring(adviceIndex);
-          print('DEBUG: Advice content length: ${adviceContent.length}');
-          print('DEBUG: Last 50 chars: ${summary.substring(summary.length - min(50, summary.length))}');
-        }
-      }
+      // Update log summary
       
       final oldLog = _logs[index];
       final updatedLog = ChatLog(
@@ -187,9 +169,6 @@ class ChatLogService extends ChangeNotifier {
         await _saveLogsToLocal();
         notifyListeners();
       } catch (e) {
-        if (kDebugMode) {
-          print('Error updating log summary: $e');
-        }
         rethrow;
       }
     }

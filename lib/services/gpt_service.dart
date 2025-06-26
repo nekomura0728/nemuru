@@ -76,8 +76,6 @@ class GPTService {
       // BuildContextを渡してエラーダイアログを表示できるようにする
       aiResponse = await _generateResponseFromAPI(contextForAPI, context: context);
     } catch (e) {
-      print('Error generating response from backend: $e');
-      
       // エラータイプに基づいたメッセージを表示
       if (context != null) {
         final errorHandlingService = ErrorHandlingService();
