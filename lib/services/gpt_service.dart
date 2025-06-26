@@ -77,7 +77,7 @@ class GPTService {
       aiResponse = await _generateResponseFromAPI(contextForAPI, context: context);
     } catch (e) {
       // エラータイプに基づいたメッセージを表示
-      if (context != null) {
+      if (context != null && context.mounted) {
         final errorHandlingService = ErrorHandlingService();
         final errorType = errorHandlingService.getErrorTypeFromException(e);
         

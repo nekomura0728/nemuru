@@ -37,15 +37,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Future<void> _loadAppVersion() async {
     try {
       final packageInfo = await PackageInfo.fromPlatform();
-      setState(() {
-        _appVersion = '${packageInfo.version} (${packageInfo.buildNumber})';
-        _isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _appVersion = '${packageInfo.version} (${packageInfo.buildNumber})';
+          _isLoading = false;
+        });
+      }
     } catch (e) {
-      setState(() {
-        _appVersion = '1.0.0';
-        _isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _appVersion = '1.0.0';
+          _isLoading = false;
+        });
+      }
     }
   }
   
@@ -453,9 +457,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 } else if (!isReleaseMode) { // デバッグモードで年額商品がない場合、モック購入
                   final subscriptionService = Provider.of<SubscriptionService>(context, listen: false);
                   await subscriptionService.setPremium(true); 
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('デバッグモード: 年額プラン(仮)にアップグレードしました！')),
-                  );
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('デバッグモード: 年額プラン(仮)にアップグレードしました！')),
+                    );
+                  }
                 }
               },
               style: ElevatedButton.styleFrom(
@@ -473,9 +479,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 if (!isReleaseMode || monthlyProduct == null) {
                   final subscriptionService = Provider.of<SubscriptionService>(context, listen: false);
                   await subscriptionService.setPremium(true);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('デバッグモード: 月額プラン(仮)にアップグレードしました！')),
-                  );
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('デバッグモード: 月額プラン(仮)にアップグレードしました！')),
+                    );
+                  }
                 } else if (monthlyProduct != null) {
                   // 実際の購入処理 (monthlyProductがnullでないことを保証)
                   await purchaseService.purchaseProduct(monthlyProduct);
@@ -521,7 +529,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
         throw Exception('Could not launch $url');
       }
     } catch (e) {
-      _showComingSoonDialog(context, 'URLを開けませんでした: $url');
+      if (mounted) {
+        _showComingSoonDialog(context, 'URLを開けませんでした: $url');
+      }
     }
   }
   
@@ -652,10 +662,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         if (isAvailable) {
                           // 利用可能なキャラクターを選択
                           await preferencesService.saveSelectedCharacterId(character.id);
-                          Navigator.of(context).pop();
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text('「${character.name}」を選択しました')),
-                          );
+                          if (mounted) {
+                            Navigator.of(context).pop();
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text('「${character.name}」を選択しました')),
+                            );
+                          }
                         } else {
                           // プレミアムプランの案内を表示
                           Navigator.of(context).pop();
