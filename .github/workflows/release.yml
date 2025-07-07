@@ -94,7 +94,7 @@ jobs:
         run: flutter build apk --release --verbose
 
       - name: 🔧 Build Release App Bundle
-        run: flutter build appbundle --release --verbose
+        run: flutter build appbundle --release --verbose --no-sign
 
       - name: 📊 Generate Build Info
         run: |
