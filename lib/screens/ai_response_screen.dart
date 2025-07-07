@@ -477,9 +477,10 @@ class _AIResponseScreenState extends State<AIResponseScreen>
                 : SubscriptionService.freeConversationLimit;
 
             // エラーメッセージを表示
-            await showDialog(
-              context: context,
-              barrierDismissible: false,
+            if (mounted) {
+              await showDialog(
+                context: context,
+                barrierDismissible: false,
               builder: (context) => AlertDialog(
                 title: const Text('会話制限に達しました'),
                 content: isPremium
@@ -509,6 +510,7 @@ class _AIResponseScreenState extends State<AIResponseScreen>
                 ],
               ),
             );
+            }
 
             // 制限に達している場合は前の画面に戻る
             if (mounted) {
@@ -634,7 +636,7 @@ class _AIResponseScreenState extends State<AIResponseScreen>
                     // 会話をまとめる
                     await _endConversation();
                     // まとめ生成後は現在の画面を閉じて前の画面に戻る
-                    if (mounted) {
+                    if (context.mounted) {
                       Navigator.of(context).pop(); // AI応答画面を閉じる
                     }
                   },
