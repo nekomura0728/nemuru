@@ -1,7 +1,7 @@
 name: nemuru
 description: ねむる - A sleep and mental wellness app
 publish_to: 'none'
-version: 1.0.8+11
+version: 1.0.9+12
 
 environment:
   sdk: ">=2.19.0 <4.0.0"
@@ -22,9 +22,9 @@ dependencies:
   package_info_plus: ^4.0.2
   url_launcher: ^6.3.1
   flutter_markdown: ^0.6.14
-  in_app_purchase: ^3.1.5
-  in_app_purchase_storekit: ^0.3.6+3
-  in_app_purchase_android: ^0.3.0+10
+  in_app_purchase: ^3.2.0
+  in_app_purchase_storekit: ^0.3.17+1
+  in_app_purchase_android: ^0.3.6+13
   http: ^1.1.0
   
 dev_dependencies:
