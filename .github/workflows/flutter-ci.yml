@@ -67,6 +67,9 @@ jobs:
           flutter-version: ${{ env.FLUTTER_VERSION }}
           cache: true
 
+      - name: 📄 Accept Android Licenses
+        run: yes | flutter doctor --android-licenses
+
       - name: 📦 Get Dependencies
         run: flutter pub get
 
