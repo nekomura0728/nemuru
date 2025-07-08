@@ -199,6 +199,9 @@ jobs:
     name: 🚀 Create GitHub Release
     needs: [prepare-release, build-android-release] # iOSビルドを一時的に除外
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      actions: read
     steps:
       - name: 📥 Download Android Artifacts
         uses: actions/download-artifact@v4
