@@ -41,21 +41,25 @@ android {
     }
 
     signingConfigs {
-        create("release") {
-            // Only configure signing if key.properties exists
-            if (keystorePropertiesFile.exists()) {
-                keyAlias = keystoreProperties["keyAlias"] as String
-                keyPassword = keystoreProperties["keyPassword"] as String
-                storeFile = file(keystoreProperties["storeFile"] as String)
-                storePassword = keystoreProperties["storePassword"] as String
+        if (keystorePropertiesFile.exists() && 
+            keystoreProperties.getProperty("keyAlias") != null &&
+            keystoreProperties.getProperty("keyPassword") != null &&
+            keystoreProperties.getProperty("storeFile") != null &&
+            keystoreProperties.getProperty("storePassword") != null) {
+            create("release") {
+                keyAlias = keystoreProperties.getProperty("keyAlias")
+                keyPassword = keystoreProperties.getProperty("keyPassword") 
+                storeFile = file(keystoreProperties.getProperty("storeFile"))
+                storePassword = keystoreProperties.getProperty("storePassword")
             }
         }
     }
 
     buildTypes {
         release {
-            // Only apply signing config if key.properties exists
-            if (keystorePropertiesFile.exists()) {
+            // Only apply signing config if it was created
+            if (keystorePropertiesFile.exists() && 
+                keystoreProperties.getProperty("keyAlias") != null) {
                 signingConfig = signingConfigs.getByName("release")
             }
         }
