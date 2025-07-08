@@ -67,6 +67,17 @@ jobs:
           flutter-version: ${{ env.FLUTTER_VERSION }}
           cache: true
 
+      - name: 📦 Cache Gradle dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+            android/.gradle
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
+
       - name: 📄 Accept Android Licenses
         run: yes | flutter doctor --android-licenses
 
@@ -74,7 +85,19 @@ jobs:
         run: flutter pub get
 
       - name: 🔧 Build APK (Debug)
-        run: flutter build apk --debug --verbose || (echo "Debug build failed, checking for detailed errors" && flutter doctor -v && exit 1)
+        run: |
+          echo "Starting debug APK build with optimized Gradle settings..."
+          flutter build apk --debug || {
+            echo "=== Debug build failed, trying simpler approach ==="
+            cd android
+            echo "Gradle version:"
+            ./gradlew --version
+            echo "Cleaning project:"
+            ./gradlew clean
+            echo "Building with minimal flags:"
+            ./gradlew assembleDebug --no-daemon --stacktrace
+            exit 1
+          }
 
       - name: 🔐 Setup Android Signing (Release builds only)
         if: github.ref == 'refs/heads/main'
