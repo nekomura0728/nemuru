@@ -70,6 +70,8 @@ android {
 configurations.configureEach {
     resolutionStrategy {
         force("com.android.billingclient:billing:7.0.0")
+        // Force all billing related dependencies to use v7.0.0
+        force("com.android.billingclient:billing-ktx:7.0.0")
     }
 }
 
@@ -77,6 +79,10 @@ dependencies {
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.0.4")
     // Force Google Play Billing Library 7.0.0 for Google Play Console requirement
     implementation("com.android.billingclient:billing:7.0.0")
+    implementation("com.android.billingclient:billing-ktx:7.0.0")
+    // AndroidX Core for edge-to-edge support
+    implementation("androidx.core:core:1.12.0")
+    implementation("androidx.core:core-ktx:1.12.0")
 }
 
 flutter {
