@@ -71,7 +71,7 @@ jobs:
         run: flutter pub get
 
       - name: 🔧 Build APK (Debug)
-        run: flutter build apk --debug --verbose
+        run: flutter build apk --debug --verbose || (echo "Debug build failed, checking for detailed errors" && flutter doctor -v && exit 1)
 
       - name: 🔐 Setup Android Signing (Release builds only)
         if: github.ref == 'refs/heads/main'
