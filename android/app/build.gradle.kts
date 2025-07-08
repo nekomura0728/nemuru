@@ -56,8 +56,16 @@ android {
     }
 }
 
+configurations.configureEach {
+    resolutionStrategy {
+        force("com.android.billingclient:billing:7.0.0")
+    }
+}
+
 dependencies {
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.0.4")
+    // Force Google Play Billing Library 7.0.0 for Google Play Console requirement
+    implementation("com.android.billingclient:billing:7.0.0")
 }
 
 flutter {

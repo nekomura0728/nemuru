@@ -90,11 +90,24 @@ jobs:
       - name: 📦 Get Dependencies
         run: flutter pub get
 
-      - name: 🔧 Build Release APK
+      - name: 🔐 Setup Android Signing
+        run: |
+          # Decode keystore from base64 secret
+          echo "${{ secrets.KEYSTORE_JKS }}" | base64 -d > android/app/nemuru-upload-key.jks
+          
+          # Create key.properties file
+          cat > android/key.properties << EOF
+          storePassword=${{ secrets.KEYSTORE_PASSWORD }}
+          keyPassword=${{ secrets.KEY_PASSWORD }}
+          keyAlias=${{ secrets.KEY_ALIAS }}
+          storeFile=nemuru-upload-key.jks
+          EOF
+
+      - name: 🔧 Build Release APK (Signed)
         run: flutter build apk --release --verbose
 
-      - name: 🔧 Build Release App Bundle
-        run: flutter build appbundle --release --verbose --no-sign
+      - name: 🔧 Build Release App Bundle (Signed)
+        run: flutter build appbundle --release --verbose
 
       - name: 📊 Generate Build Info
         run: |

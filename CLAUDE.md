@@ -212,6 +212,22 @@ flutter build appbundle --release
 # 出力: /Users/s.maemura/nemuru/build/app/outputs/bundle/release/app-release.aab
 ```
 
+## Gemini CLI 連携ガイド
+
+### 目的
+ユーザーが **「Geminiと相談しながら進めて」** （または同義語）と指示した場合、Claude は以降のタスクを **Gemini CLI** と協調しながら進める。
+Gemini から得た回答はそのまま提示し、Claude 自身の解説・統合も付け加えることで、両エージェントの知見を融合する。
+
+**Gemini CLI 呼び出し**
+```bash 
+gemini -p "$PROMPT"
+```
+
+**Gemini Websearch 呼び出し**
+```bash
+gemini -p "WebSearch: ..."
+```
+
 ## SuperClaude開発設定
 
 ### Git自動保存設定
@@ -330,3 +346,4 @@ flutter build appbundle --release
 - **条件付きコンパイル**: Web/Mobile環境での適切なライブラリ選択システム
 - **プラットフォーム抽象化**: 購入・通知・プラットフォーム検出の統一インターフェース
 - **エラーハンドリング強化**: Web環境での適切なフォールバック処理
+

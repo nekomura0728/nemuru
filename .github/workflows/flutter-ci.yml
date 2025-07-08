@@ -73,6 +73,20 @@ jobs:
       - name: 🔧 Build APK (Debug)
         run: flutter build apk --debug --verbose
 
+      - name: 🔐 Setup Android Signing (Release builds only)
+        if: github.ref == 'refs/heads/main'
+        run: |
+          # Decode keystore from base64 secret for main branch builds
+          echo "${{ secrets.KEYSTORE_JKS }}" | base64 -d > android/app/nemuru-upload-key.jks
+          
+          # Create key.properties file
+          cat > android/key.properties << EOF
+          storePassword=${{ secrets.KEYSTORE_PASSWORD }}
+          keyPassword=${{ secrets.KEY_PASSWORD }}
+          keyAlias=${{ secrets.KEY_ALIAS }}
+          storeFile=nemuru-upload-key.jks
+          EOF
+
       - name: 🔧 Build APK (Release)
         run: flutter build apk --release --verbose
 
