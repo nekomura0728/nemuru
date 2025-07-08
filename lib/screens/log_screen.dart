@@ -49,7 +49,7 @@ class _LogScreenState extends State<LogScreen> with SingleTickerProviderStateMix
 
   Future<void> _loadLogs() async {
     final chatLogService = Provider.of<ChatLogService>(context, listen: false);
-    final List<ChatLog> allLogs = await chatLogService.getAllLogs();
+    final List<ChatLog> allLogs = chatLogService.getAllLogs();
 
     final Map<DateTime, List<Map<String, dynamic>>> newEvents = {};
     final Map<DateTime, List<ChatLog>> newChatLogs = {};
@@ -82,46 +82,6 @@ class _LogScreenState extends State<LogScreen> with SingleTickerProviderStateMix
     }
   }
   
-  void _generateMockData() {
-    final now = DateTime.now();
-    final moods = ['喜', '怒', '哀', '楽', '疲', '焦'];
-    final responses = [
-      '今日も嬉しいことがあったんですね。その喜びを感じられることは素晴らしいことです。明日もまた、小さな幸せに気づける一日になりますように。',
-      '怒りを感じることも大切な感情表現です。その気持ちをちゃんと認めてくれたことが素晴らしいです。少しずつ、心が落ち着いていきますように。',
-      '悲しい気持ちを言葉にするのは勇気がいることです。その気持ちに正直になれたあなたは強いです。明日は少し心が軽くなっていますように。',
-      '楽しい時間を過ごせたことが伝わってきます。その気持ちを大切にしてくださいね。明日もまた、心地よい時間が訪れますように。',
-      'お疲れさまでした。今日一日、あなたはよく頑張りました。心地よい眠りにつけて、明日は少し楽になっていますように。',
-      '焦りを感じることは、大切なことへの思いの表れかもしれません。その気持ちを認めてくれてありがとう。少しずつ、心が落ち着いていきますように。',
-    ];
-    
-    final userInputs = [
-      '今日は友達と久しぶりに会えて嬉しかった。',
-      '仕事でミスをしてしまい、イライラした一日だった。',
-      '大切にしていたものをなくしてしまって、悲しい。',
-      '休日を満喫できて楽しかった。',
-      '仕事が忙しくて、疲れた一日だった。',
-      '締め切りが近づいていて、焦っている。',
-    ];
-    
-    // Generate data for the past 10 days
-    for (int i = 0; i < 10; i++) {
-      final date = DateTime(now.year, now.month, now.day - i);
-      final normalizedDate = DateTime(date.year, date.month, date.day);
-      
-      // Skip some days to simulate non-consecutive entries
-      if (i == 3 || i == 7) continue;
-      
-      final moodIndex = i % moods.length;
-      _events[normalizedDate] = [
-        {
-          'mood': moods[moodIndex],
-          'userInput': userInputs[moodIndex],
-          'aiResponse': responses[moodIndex],
-          'timestamp': date,
-        }
-      ];
-    }
-  }
   
   List<Map<String, dynamic>> _getEventsForDay(DateTime day) {
     final normalizedDate = DateTime(day.year, day.month, day.day);

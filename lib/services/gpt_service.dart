@@ -1,8 +1,6 @@
 import 'dart:convert';
 import 'dart:async';
-import 'dart:math';
 import 'package:http/http.dart' as http;
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:nemuru/models/character.dart';
 import 'package:nemuru/models/message.dart';
@@ -124,11 +122,10 @@ class GPTService {
   
   // GPT-4oにメッセージを送信して応答を取得する内部メソッド
   Future<String> _generateResponseFromAPI(String userInput, {BuildContext? context}) async {
-    // デバッグ用に強制的にモック応答を返す場合はここをtrueにする
-    bool useDebugMockResponse = false;
-    if (useDebugMockResponse && kDebugMode) {
-      return _getMockResponse(_currentMood, _messageCount);
-    }
+    // デバッグ用モック応答（必要時にコメントアウトを解除）
+    // if (kDebugMode) {
+    //   return _getMockResponse(_currentMood, _messageCount);
+    // }
 
     
     // タイムアウト設定
@@ -167,7 +164,7 @@ class GPTService {
         
         throw Exception('${errorHandlingService.getErrorMessage(errorType)} (ステータスコード: ${response.statusCode})');
       }
-    } on TimeoutException catch (e) {
+    } on TimeoutException {
       if (context != null) {
         ErrorHandlingService().showErrorDialog(
           context, 
@@ -178,7 +175,7 @@ class GPTService {
         );
       }
       return '応答の取得に時間がかかっています。ネットワーク環境を確認して、もう一度お試しください。';
-    } on http.ClientException catch (e) {
+    } on http.ClientException {
       if (context != null) {
         ErrorHandlingService().showErrorDialog(
           context, 
@@ -190,9 +187,10 @@ class GPTService {
       }
       return 'ネットワークに接続できません。インターネット接続を確認して、もう一度お試しください。';
     } catch (e) {
-      if (kDebugMode && useDebugMockResponse) {
-        return _getMockResponse(_currentMood, _messageCount);
-      }
+      // デバッグ用モック応答（必要時にコメントアウトを解除）
+      // if (kDebugMode) {
+      //   return _getMockResponse(_currentMood, _messageCount);
+      // }
       
       if (context != null) {
         final errorHandlingService = ErrorHandlingService();
@@ -430,45 +428,11 @@ $conversationPhaseInstruction
       return "会話履歴がありません。";
     }
 
-    // デバッグ用に強制的にモック応答を返す場合はここをtrueにする
-    bool useDebugMockSummary = false; // 本番用に設定
-    if (useDebugMockSummary && kDebugMode) {
-      // 簡潔な概要形式のモック応答
-      final moodResponses = {
-        '喜': [
-          "喜びに満ちた一日の体験を共有し、その幸せな気持ちを大切にするよう励まされた",
-          "特別な喜びについて話し合い、その感情を深く味わう大切さを確認した",
-        ],
-        '怒': [
-          "今日感じた怒りや苛立ちについて話し、感情を認めることの重要性を学んだ",
-          "フラストレーションの原因を探り、感情の整理方法について話し合った",
-        ],
-        '哀': [
-          "悲しみや寂しさを素直に表現し、その感情を受け入れることの大切さを確認した",
-          "心が重い一日について相談し、明日への希望を見出すよう励まされた",
-        ],
-        '楽': [
-          "楽しい時間の充実感を共有し、その記憶を大切にするよう話し合った",
-          "今日の楽しかった出来事を振り返り、満足感を再確認した",
-        ],
-        '疲': [
-          "一日の疲れについて話し、休息の大切さと頑張った自分を認めることを学んだ",
-          "疲労感を素直に認め、心身のケアの重要性について話し合った",
-        ],
-        '焦': [
-          "焦りや不安と向き合い、一歩ずつ進むことの大切さを確認した",
-          "緊張感について話し、心を落ち着かせる方法を教えてもらった",
-        ]
-      };
-      
-      final responses = moodResponses[_currentMood] ?? [
-        "今日の出来事や感情について話し、穏やかな気持ちで眠りにつけるよう励まされた"
-      ];
-      
-      // ランダムに選択
-      final random = Random();
-      return responses[random.nextInt(responses.length)];
-    }
+    // デバッグ用モック応答（必要時にコメントアウトを解除）
+    // if (kDebugMode) {
+    //   final responses = ["今日の出来事や感情について話し、穏やかな気持ちで眠りにつけるよう励まされた"];
+    //   return responses[0];
+    // }
 
     final List<Map<String, String>> messagesForSummary = [];
 
@@ -523,47 +487,14 @@ $conversationPhaseInstruction
         throw Exception('Failed to generate summary from backend: ${response.statusCode} - ${response.body}');
       }
     } catch (e) {
-      if (kDebugMode && useDebugMockSummary) { // Fallback to mock only if debug mock is globally enabled
-         return "（モック）ユーザーは${_currentMood}な気分で、いくつかのやり取りをしました。";
-      }
+      // デバッグ用モック応答（必要時にコメントアウトを解除）
+      // if (kDebugMode) {
+      //   return "（モック）ユーザーは${_currentMood}な気分で、いくつかのやり取りをしました。";
+      // }
       // Consider a more user-friendly error message for production
       throw Exception('会話の要約中にエラーが発生しました。しばらくしてからもう一度お試しください。');
     }
   }
 
   // デバッグ用のモック応答（APIキーがない場合や開発時に使用）
-  String _getMockResponse(String mood, int messageCount) {
-    // 会話の回数に応じて異なる応答を返す
-    if (messageCount == 1) {
-      // 初回メッセージの応答
-      switch (mood) {
-case '喜':
-          return '今日の喜びを言葉にしてくれてありがとう。その小さな幸せを感じられる心は、あなたの大切な宝物です。もう少し、その嬉しかった瞬間について教えてもらえますか？';
-        case '怒':
-          return '怒りの感情を正直に表現してくれたことに感謝します。その感情は、あなたの大切な価値観や境界線を教えてくれるものかもしれません。どんなことが特に気になりましたか？';
-        case '哀':
-          return '悲しい気持ちを言葉にするのは勇気のいることです。その感情もあなたの一部として、ただそこにあることを認めてあげてください。今、一番心に引っかかっていることはなんですか？';
-        case '楽':
-          return '楽しい時間を過ごせたことが伝わってきます。そういった瞬間を大切にできるあなたの感性は素晴らしいですね。その楽しい経験から、どんな発見がありましたか？';
-        case '疲':
-          return 'お疲れさまでした。今日一日、あなたはよく頑張りました。疲れを感じるということは、何かに真剣に向き合った証でもあります。今日のどんな部分が特に疲れましたか？';
-        case '焦':
-          return '焦りを感じていることを共有してくれてありがとう。その感情は、あなたが大切にしていることへの思いの表れかもしれませんね。どんなことに対して焦りを感じていますか？';
-        default:
-          return '今日の気持ちを共有してくれてありがとう。一日の終わりに自分の感情と向き合うことは、とても大切なことです。今日はどんな出来事が印象に残っていますか？';
-      }
-    } else if (messageCount == 2) {
-      // 2回目のメッセージの応答（深掘りの質問）
-      return 'なるほど、そう感じたのですね。それについてもう少し考えてみると、何か気づくことはありますか？あなたにとって、それはどんな意味を持っていますか？';
-    } else if (messageCount == 3) {
-      // 3回目のメッセージの応答（深堀りと心の整理を促す）
-      return 'そういう捕らえ方ができるんですね。とても興味深い視点です。その経験から学んだことを少しだけ深呼吸しながら考えてみましょう。心に残っていることは何ですか？';
-    } else if (messageCount == 4) {
-      // 4回目のメッセージの応答（まとめと睡眠を促すアドバイス）
-      return '今日の振り返りを通して、色々な気づきがあったようですね。お話を聞かせてくれてありがとう。床に入る前に、腕や足の緩和を感じながら、ゆっくりと深呼吸をしてみませんか。心も体も穏やかになりますよ。';
-    } else {
-      // 5回目以降のメッセージの応答（睡眠に向けた穏やかな終結）
-      return 'この会話を通して、あなたの心が少し穏やかになったなら嬉しいです。これから眠りにつく準備をしましょう。穏やかな波の音や、優しい月明かりの下で、あなたの体が少しずつ重くなっていくのを感じてください。おやすみなさい。';
-    }
-  }
 }
