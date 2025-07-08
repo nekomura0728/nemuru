@@ -114,40 +114,40 @@ jobs:
           name: release-aab
           path: build/app/outputs/bundle/release/app-release.aab
 
-  # 🍎 iOS ビルド
-  build-ios:
-    name: 🍎 Build iOS
-    needs: analyze
-    runs-on: macos-latest
-    steps:
-      - name: 📥 Checkout Repository
-        uses: actions/checkout@v4
-
-      - name: 🐦 Setup Flutter
-        uses: subosito/flutter-action@v2
-        with:
-          flutter-version: ${{ env.FLUTTER_VERSION }}
-          cache: true
-
-      - name: 📦 Get Dependencies
-        run: flutter pub get
-
-      - name: 🔧 Build iOS (Debug)
-        run: flutter build ios --debug --no-codesign --verbose
-
-      - name: 🔧 Build iOS (Release)
-        run: flutter build ios --release --no-codesign --verbose
-
-      - name: 📦 Upload iOS Build
-        uses: actions/upload-artifact@v4
-        with:
-          name: ios-build
-          path: build/ios/iphoneos/
+  # 🍎 iOS ビルド (一時的に無効化 - Androidに集中)
+  # build-ios:
+  #   name: 🍎 Build iOS
+  #   needs: analyze
+  #   runs-on: macos-latest
+  #   steps:
+  #     - name: 📥 Checkout Repository
+  #       uses: actions/checkout@v4
+  #
+  #     - name: 🐦 Setup Flutter
+  #       uses: subosito/flutter-action@v2
+  #       with:
+  #         flutter-version: ${{ env.FLUTTER_VERSION }}
+  #         cache: true
+  #
+  #     - name: 📦 Get Dependencies
+  #       run: flutter pub get
+  #
+  #     - name: 🔧 Build iOS (Debug)
+  #       run: flutter build ios --debug --no-codesign --verbose
+  #
+  #     - name: 🔧 Build iOS (Release)
+  #       run: flutter build ios --release --no-codesign --verbose
+  #
+  #     - name: 📦 Upload iOS Build
+  #       uses: actions/upload-artifact@v4
+  #       with:
+  #         name: ios-build
+  #         path: build/ios/iphoneos/
 
   # 🚀 デプロイメント (mainブランチのみ)
   deploy:
     name: 🚀 Deploy
-    needs: [build-android, build-ios]
+    needs: [build-android] # iOSビルドを一時的に除外
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     steps:
@@ -184,7 +184,7 @@ jobs:
   # 📊 レポート生成
   report:
     name: 📊 Generate Report
-    needs: [build-android, build-ios]
+    needs: [build-android] # iOSビルドを一時的に除外
     runs-on: ubuntu-latest
     if: always()
     steps:
@@ -198,13 +198,11 @@ jobs:
           echo "## 📊 Build Status" >> build_report.md
           echo "- ✅ Analysis: ${{ needs.analyze.result }}" >> build_report.md
           echo "- 🤖 Android Build: ${{ needs.build-android.result }}" >> build_report.md  
-          echo "- 🍎 iOS Build: ${{ needs.build-ios.result }}" >> build_report.md
           echo "" >> build_report.md
           echo "## 🎯 Artifacts Generated" >> build_report.md
           echo "- Debug APK" >> build_report.md
           echo "- Release APK" >> build_report.md
           echo "- Release AAB (Google Play)" >> build_report.md
-          echo "- iOS Build" >> build_report.md
           echo "" >> build_report.md
           echo "🤖 Generated with [Claude Code](https://claude.ai/code)" >> build_report.md
 
