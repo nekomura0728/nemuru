@@ -1,0 +1,26 @@
+{
+  "enabled": true,
+  "name": "Code Quality Review",
+  "description": "Automatically reviews code files for quality issues, potential bugs, performance optimizations, security vulnerabilities, and accessibility concerns when they are modified",
+  "version": "1",
+  "when": {
+    "type": "fileEdited",
+    "patterns": [
+      "lib/**/*.dart",
+      "android/**/*.kt",
+      "android/**/*.java",
+      "ios/**/*.swift",
+      "ios/**/*.m",
+      "ios/**/*.h",
+      "supabase/**/*.ts",
+      "web/**/*.html",
+      "web/**/*.js",
+      "**/*.yaml",
+      "**/*.yml"
+    ]
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "Please review the current file for:\n1. Code quality issues (naming conventions, code structure, maintainability)\n2. Potential bugs (null safety, error handling, edge cases)\n3. Performance optimizations (inefficient algorithms, memory usage, unnecessary operations)\n4. Security vulnerabilities (data validation, authentication, sensitive data exposure)\n5. Accessibility concerns (screen reader support, keyboard navigation, color contrast)\n\nProvide specific recommendations with code examples where applicable. Focus on actionable improvements that can be implemented immediately.　また説明するときは日本語でおねがいします。"
+  }
+}
